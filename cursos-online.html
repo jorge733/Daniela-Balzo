@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cursos online | Daniela Balzo · Negra Mora</title>
+<meta name="description" content="Cursos de costura en video: cómpralos en línea y velos cuando quieras desde tu aula virtual.">
+<link rel="icon" href="assets/img/logo-01.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wdth,wght@75..100,300..800&display=swap">
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body data-pagina="cursos-online">
+<div class="aviso"><b>Prototipo:</b> los precios, videos y pagos son de ejemplo. Puedes probar la compra sin pagar nada.</div>
+<main>
+  <header class="cabeza">
+    <div class="wrap">
+      <span class="etiqueta">Aprende a tu ritmo</span>
+      <h1 id="titulo">Cursos online</h1>
+      <p id="texto">Aprende a coser a tu ritmo, desde tu casa, con clases en video que puedes ver cuando quieras.</p>
+    </div>
+  </header>
+
+  <section class="banda">
+    <div class="wrap">
+      <div class="tarjetas" id="catalogo"></div>
+    </div>
+  </section>
+
+  <section class="banda banda-suave">
+    <div class="wrap">
+      <h2 class="centro">¿Cómo funciona?</h2>
+      <ol class="tarjetas" style="list-style: none; padding: 0; margin-top: 24px">
+        <li class="tarjeta"><div class="cuerpo"><span class="modalidad">Paso 1</span><h3>Elige tu curso</h3><p>Revisa qué vas a aprender en cada clase y los materiales que incluye.</p></div></li>
+        <li class="tarjeta"><div class="cuerpo"><span class="modalidad">Paso 2</span><h3>Paga en línea</h3><p>Con tarjeta de débito o crédito a través de Mercado Pago. Creas tu cuenta en el mismo paso.</p></div></li>
+        <li class="tarjeta"><div class="cuerpo"><span class="modalidad">Paso 3</span><h3>Entra a tu aula</h3><p>Ve los videos cuando quieras, descarga los moldes y marca tu avance.</p></div></li>
+      </ol>
+    </div>
+  </section>
+</main>
+<script src="assets/js/datos.js"></script>
+<script src="assets/js/layout.js"></script>
+<script>
+  (() => {
+    const t = NM.textos();
+    document.getElementById('titulo').textContent = t.onlineTitulo;
+    document.getElementById('texto').textContent = t.onlineTexto;
+    const u = NM.usuarioActual();
+    const cursos = NM.cursos().filter(c => c.publicado);
+    document.getElementById('catalogo').innerHTML = cursos.length ? cursos.map(c => {
+      const tiene = u && u.cursos.includes(c.id);
+      return `
+      <article class="tarjeta">
+        <img src="assets/img/${NM.esc(c.imagen)}" alt="" loading="lazy">
+        <div class="cuerpo">
+          <span class="modalidad">${c.lecciones.length} clases en video</span>
+          <h3>${NM.esc(c.titulo)}</h3>
+          <p>${NM.esc(c.resumen)}</p>
+          <div class="pie-tarjeta">
+            <span class="precio">${tiene ? 'Ya es tuyo' : NM.clp(c.precio)}</span>
+            <a class="btn btn-chico" href="${tiene ? 'aula.html?curso=' : 'curso.html?id='}${encodeURIComponent(c.id)}">${tiene ? 'Ir al aula' : 'Ver curso'}</a>
+          </div>
+        </div>
+      </article>`;
+    }).join('') : '<p class="vacio">Pronto habrá cursos disponibles.</p>';
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Curso online | Daniela Balzo · Negra Mora</title>
+<meta name="description" content="Curso de costura en video de Daniela Balzo.">
+<link rel="icon" href="assets/img/logo-01.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wdth,wght@75..100,300..800&display=swap">
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body data-pagina="cursos-online">
+<div class="aviso"><b>Prototipo:</b> el pago es simulado. No se cobra nada ni se piden datos de tarjeta.</div>
+<main id="contenido">
+  <section class="banda"><div class="wrap"><p class="vacio">Cargando curso…</p></div></section>
+</main>
+
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+  <div class="caja">
+    <h2 id="modal-titulo">Comprar curso</h2>
+    <div class="resumen"><span id="m-curso"></span><span id="m-precio"></span></div>
+
+    <form class="form" id="paso-cuenta">
+      <p class="nota" id="m-ya-cuenta"></p>
+      <div id="campos-cuenta">
+        <label>Nombre<input id="m-nombre" autocomplete="name" required></label>
+        <label>Correo<input id="m-correo" type="email" autocomplete="email" required></label>
+        <label>Crea una contraseña<input id="m-clave" type="password" minlength="6" autocomplete="new-password" required></label>
+        <p class="nota">Con este correo y contraseña entrarás a tu aula para ver el curso.</p>
+      </div>
+      <p class="error" id="m-error"></p>
+      <button class="btn mp" type="submit">Pagar con Mercado Pago</button>
+      <button class="btn btn-borde" type="button" data-cerrar>Cancelar</button>
+    </form>
+
+    <div id="paso-pagando" hidden>
+      <p>Conectando con Mercado Pago…</p>
+      <div class="barra"><span id="m-barra" style="width: 0%"></span></div>
+    </div>
+
+    <div id="paso-listo" hidden>
+      <p><b>¡Pago aprobado!</b> Ya tienes acceso al curso. También te enviaríamos un correo de confirmación.</p>
+      <div class="botones"><a class="btn" id="m-ir" href="aula.html">Ir a mi aula</a></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/datos.js"></script>
+<script src="assets/js/layout.js"></script>
+<script src="assets/js/tienda.js"></script>
+</body>
+</html>

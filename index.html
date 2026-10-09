@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daniela Balzo · Clases de costura | Negra Mora</title>
+<meta name="description" content="Clases de costura personalizadas desde 2012: presenciales en La Reina, a domicilio y online. Diseño de vestuario, reciclaje textil y arte terapia.">
+<meta property="og:title" content="Daniela Balzo · Clases de costura">
+<meta property="og:description" content="Clases de costura personalizadas desde 2012, presenciales, a domicilio y online.">
+<meta property="og:image" content="assets/img/inicio-02.jpg">
+<link rel="icon" href="assets/img/logo-01.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wdth,wght@75..100,300..800&display=swap">
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body data-pagina="inicio">
+<main>
+  <div class="tira">
+    <img src="assets/img/inicio-01.jpg" alt="Daniela en su taller de costura">
+    <img src="assets/img/inicio-02.jpg" alt="Clases de costura a pasos del metro Francisco Bilbao">
+    <img src="assets/img/inicio-03.jpg" alt="Ilustración textil">
+    <img src="assets/img/inicio-04.jpg" alt="Taller de costura con máquinas">
+  </div>
+
+  <section class="banda banda-malva centro">
+    <div class="wrap">
+      <h2>Quién soy</h2>
+      <a class="btn" href="quien-soy.html">Entrar</a>
+    </div>
+  </section>
+
+  <section class="banda banda-lila centro">
+    <div class="wrap">
+      <h2 id="cursos-titulo">Cursos permanentes</h2>
+      <p id="cursos-texto">Entérate de toda la información de los cursos disponibles</p>
+      <a class="btn" href="cursos.html">Entrar</a>
+    </div>
+  </section>
+
+  <section class="banda">
+    <div class="wrap">
+      <div class="centro angosto" style="margin-bottom: 36px">
+        <span class="etiqueta">Nuevo</span>
+        <h2 id="online-titulo">Cursos online</h2>
+        <p id="online-texto">Aprende a coser a tu ritmo, desde tu casa, con clases en video que puedes ver cuando quieras.</p>
+      </div>
+      <div class="tarjetas" id="destacados"></div>
+      <div class="centro" style="margin-top: 32px"><a class="btn btn-borde" href="cursos-online.html">Ver todos los cursos online</a></div>
+    </div>
+  </section>
+</main>
+<script src="assets/js/datos.js"></script>
+<script src="assets/js/layout.js"></script>
+<script>
+  (() => {
+    const t = NM.textos();
+    document.getElementById('cursos-titulo').textContent = t.cursosTitulo;
+    document.getElementById('cursos-texto').textContent = t.cursosTexto;
+    document.getElementById('online-titulo').textContent = t.onlineTitulo;
+    document.getElementById('online-texto').textContent = t.onlineTexto;
+    const cursos = NM.cursos().filter(c => c.publicado).slice(0, 3);
+    document.getElementById('destacados').innerHTML = cursos.map(c => `
+      <article class="tarjeta">
+        <img src="assets/img/${NM.esc(c.imagen)}" alt="" loading="lazy">
+        <div class="cuerpo">
+          <span class="modalidad">Online · ${c.lecciones.length} clases en video</span>
+          <h3>${NM.esc(c.titulo)}</h3>
+          <p>${NM.esc(c.resumen)}</p>
+          <div class="pie-tarjeta">
+            <span class="precio">${NM.clp(c.precio)}</span>
+            <a class="btn btn-chico" href="curso.html?id=${encodeURIComponent(c.id)}">Ver curso</a>
+          </div>
+        </div>
+      </article>`).join('');
+  })();
+</script>
+</body>
+</html>

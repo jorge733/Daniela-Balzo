@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contacto | Daniela Balzo · Negra Mora</title>
+<meta name="description" content="Escríbele a Daniela Balzo para clases de costura, talleres y cursos online.">
+<link rel="icon" href="assets/img/logo-01.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wdth,wght@75..100,300..800&display=swap">
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body data-pagina="contacto">
+<main>
+  <section class="banda banda-lila">
+    <div class="wrap dos" style="align-items: start">
+      <div>
+        <h1>Contacto</h1>
+        <p><b>Correo:</b> <a href="mailto:moradenegro@gmail.com">moradenegro@gmail.com</a></p>
+        <p><b>Teléfono y WhatsApp:</b> +56 9 3370 1311</p>
+        <p><b>Instagram:</b> <a href="https://instagram.com/moradenegro" target="_blank" rel="noopener">@moradenegro</a></p>
+        <p><b>Taller:</b> La Reina, a pasos del metro Francisco Bilbao (L4)</p>
+      </div>
+      <form class="form" id="form-contacto">
+        <label>Nombre<input id="c-nombre" name="nombre" required autocomplete="name"></label>
+        <label>Correo<input id="c-correo" name="correo" type="email" required autocomplete="email"></label>
+        <label>¿Sobre qué quieres consultar?
+          <select id="c-motivo" name="motivo">
+            <option>Clases grupales en el taller</option>
+            <option>Clases a domicilio</option>
+            <option>Clases online</option>
+            <option>Cursos en video</option>
+            <option>Cotizar un taller</option>
+            <option>Otro</option>
+          </select>
+        </label>
+        <label>Mensaje<textarea id="c-mensaje" name="mensaje" required></textarea></label>
+        <button class="btn" type="submit">Enviar por WhatsApp</button>
+        <p class="nota">Se abrirá WhatsApp con tu mensaje listo para enviar.</p>
+      </form>
+    </div>
+  </section>
+</main>
+<script src="assets/js/datos.js"></script>
+<script src="assets/js/layout.js"></script>
+<script>
+  document.getElementById('form-contacto').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const v = (id) => document.getElementById(id).value.trim();
+    const texto = `Hola Daniela, soy ${v('c-nombre')} (${v('c-correo')}).\nConsulta: ${v('c-motivo')}\n\n${v('c-mensaje')}`;
+    window.open(`https://wa.me/${NM.CONTACTO.whatsapp}?text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
+  });
+</script>
+</body>
+</html>
