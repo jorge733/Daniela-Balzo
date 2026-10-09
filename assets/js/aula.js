@@ -39,6 +39,14 @@
     return c.lecciones.length ? Math.round(100 * hechas.filter(i => i < c.lecciones.length).length / c.lecciones.length) : 0;
   };
 
+  // Íconos
+  const ICO = {
+    carpeta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+    video: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>',
+    pdf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>',
+    candado: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>'
+  };
+
   function misCursos(u) {
     const cursos = u.cursos.map(NM.curso).filter(Boolean);
     main.innerHTML = `
@@ -48,18 +56,20 @@
           <div><h1 style="margin: 0">Hola, ${esc(u.nombre.split(' ')[0])}</h1><p class="nota" style="margin: 0">${esc(u.correo)}</p></div>
           <button class="btn btn-borde btn-chico" id="salir" type="button">Cerrar sesión</button>
         </div>
-        <h2>Mis cursos</h2>
-        ${cursos.length ? `<div class="tarjetas">${cursos.map(c => {
+        <h2 class="hilo">Mis carpetas</h2>
+        <p class="nota">Cada curso que compras tiene su carpeta exclusiva con los videos y materiales. Solo tú puedes abrirla.</p>
+        ${cursos.length ? `<div class="tarjetas" style="margin-top: 24px">${cursos.map(c => {
           const p = avance(u, c);
-          return `<article class="tarjeta">
-            <img src="assets/img/${esc(c.imagen)}" alt="" loading="lazy">
+          return `<a class="tarjeta carpeta-tarjeta" href="aula.html?curso=${encodeURIComponent(c.id)}">
+            <div class="img"><img src="assets/img/${esc(c.imagen)}" alt="" loading="lazy">
+              <span class="chip chip-carpeta">${ICO.carpeta} Carpeta del curso</span></div>
             <div class="cuerpo">
               <h3>${esc(c.titulo)}</h3>
+              <p class="contenido-carpeta">${ICO.video} ${c.lecciones.length} videos <span>·</span> ${ICO.pdf} ${(c.materiales || []).length} materiales</p>
               <div class="barra" aria-label="Avance ${p}%"><span style="width: ${p}%"></span></div>
-              <p>${p}% completado · ${c.lecciones.length} clases</p>
-              <div class="pie-tarjeta"><a class="btn btn-chico" href="aula.html?curso=${encodeURIComponent(c.id)}">${p ? 'Continuar' : 'Empezar'}</a></div>
+              <div class="pie-tarjeta"><span class="nota">${p}% completado</span><span class="flecha">${p ? 'Continuar' : 'Abrir carpeta'} </span></div>
             </div>
-          </article>`;
+          </a>`;
         }).join('')}</div>` : `<p class="vacio">Todavía no tienes cursos. <a href="cursos-online.html">Ver cursos online</a></p>`}
       </div>
     </section>`;
@@ -71,18 +81,31 @@
     const hechas = ((prog[u.correo] = prog[u.correo] || {})[c.id] = prog[u.correo][c.id] || []);
     const l = c.lecciones[i];
     const p = avance(u, c);
+    const materiales = c.materiales || [];
     main.innerHTML = `
     <section class="banda">
       <div class="wrap">
-        <p><a href="aula.html">← Mis cursos</a></p>
-        <h1>${esc(c.titulo)}</h1>
-        <div class="barra" style="margin-bottom: 6px"><span style="width: ${p}%"></span></div>
-        <p class="nota">${p}% completado</p>
-        <div class="aula">
-          <ol class="lecciones">
-            ${c.lecciones.map((x, j) => `<li><button type="button" data-i="${j}" class="${hechas.includes(j) ? 'hecha' : ''}" ${j === i ? 'aria-current="true"' : ''}>
-              <span class="check" aria-hidden="true"></span><span>Clase ${j + 1}: ${esc(x.titulo)}<br><span class="nota">${esc(x.duracion || '')}</span></span></button></li>`).join('')}
-          </ol>
+        <nav class="ruta" aria-label="Ubicación"><a href="aula.html">Mis carpetas</a><span aria-hidden="true">/</span><span>${esc(c.titulo)}</span></nav>
+        <div class="pie-tarjeta" style="padding: 0; align-items: flex-end">
+          <div>
+            <span class="etiqueta exclusiva">${ICO.candado} Carpeta exclusiva · solo para ti</span>
+            <h1 style="margin: 0">${esc(c.titulo)}</h1>
+          </div>
+          <div style="min-width: 200px; flex: 0 1 260px">
+            <p class="nota" style="margin: 0 0 6px">${p}% completado</p>
+            <div class="barra"><span style="width: ${p}%"></span></div>
+          </div>
+        </div>
+        <div class="aula" style="margin-top: 28px">
+          <aside class="carpeta" aria-label="Contenido de la carpeta">
+            <div class="carpeta-titulo">${ICO.carpeta} Videos <span>${c.lecciones.length}</span></div>
+            <ol class="lecciones">
+              ${c.lecciones.map((x, j) => `<li><button type="button" data-i="${j}" class="${hechas.includes(j) ? 'hecha' : ''}" ${j === i ? 'aria-current="true"' : ''}>
+                <span class="check" aria-hidden="true"></span><span>Clase ${j + 1}: ${esc(x.titulo)}<br><span class="nota">${ICO.video} ${esc(x.duracion || 'video')}</span></span></button></li>`).join('')}
+            </ol>
+            ${materiales.length ? `<div class="carpeta-titulo">${ICO.carpeta} Materiales <span>${materiales.length}</span></div>
+            <ul class="archivos">${materiales.map(m => `<li><button type="button" data-material>${ICO.pdf}<span>${esc(m)}</span><span class="descargar">Descargar</span></button></li>`).join('')}</ul>` : ''}
+          </aside>
           <div>
             <div class="video" role="img" aria-label="Video de la clase">
               <div><div class="play" aria-hidden="true">▶</div>
@@ -98,14 +121,14 @@
                 ${i < c.lecciones.length - 1 ? `<button class="btn btn-chico" data-i="${i + 1}" type="button">Siguiente clase</button>` : ''}
               </div>
             </div>
-            ${(c.materiales || []).length ? `<h3 style="margin-top: 28px">Materiales para descargar</h3>
-            <ul class="materiales">${c.materiales.map(m => `<li><span>${esc(m)}</span><span class="nota">Disponible en la versión final</span></li>`).join('')}</ul>` : ''}
+            <p class="nota" id="aviso-material" hidden>En la versión final, el archivo se descarga directamente desde tu carpeta privada.</p>
             <p class="nota" style="margin-top: 20px">¿Dudas con esta clase? <a href="https://wa.me/${NM.CONTACTO.whatsapp}" target="_blank" rel="noopener">Escríbele a Daniela por WhatsApp</a>.</p>
           </div>
         </div>
       </div>
     </section>`;
     main.querySelectorAll('[data-i]').forEach(b => b.onclick = () => verCurso(u, c, Number(b.dataset.i)));
+    main.querySelectorAll('[data-material]').forEach(b => b.onclick = () => { document.getElementById('aviso-material').hidden = false; });
     document.getElementById('hecha').onchange = (e) => {
       const k = hechas.indexOf(i);
       if (e.target.checked && k < 0) hechas.push(i);
@@ -113,8 +136,9 @@
       NM.guardarProgreso(prog);
       verCurso(u, c, i);
     };
-    window.scrollTo({ top: 0 });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }
+
 
   function render() {
     const u = NM.usuarioActual();
