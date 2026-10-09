@@ -11,42 +11,118 @@
 <link rel="icon" href="assets/img/logo-01.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wdth,wght@75..100,300..800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wdth,wght@75..100,300..800&family=Sacramento&display=swap">
 <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body data-pagina="inicio">
 <main>
+  <section class="portada">
+    <div class="wrap">
+      <img class="logo-grande" src="assets/img/logo-01.jpg" alt="Logo Negra Mora">
+      <h1 id="p-nombre">Daniela Balzo</h1>
+      <p class="bajada"><span id="p-linea1">Diseñadora gráfica y de vestuario / Arteterapeuta</span><br><span id="p-linea2">Clases de Costura personalizadas desde 2012</span></p>
+      <div class="botones">
+        <a class="btn btn-rosa" href="cursos.html">Ver cursos de costura</a>
+        <a class="btn btn-borde-claro" href="cursos-online.html">Cursos online</a>
+      </div>
+    </div>
+  </section>
+
   <div class="tira">
-    <img src="assets/img/inicio-01.jpg" alt="Daniela en su taller de costura">
+    <img src="assets/img/inicio-01.jpg" alt="Daniela en su taller, junto a los hilos">
     <img src="assets/img/inicio-02.jpg" alt="Clases de costura a pasos del metro Francisco Bilbao">
     <img src="assets/img/inicio-03.jpg" alt="Ilustración textil">
     <img src="assets/img/inicio-04.jpg" alt="Taller de costura con máquinas">
   </div>
 
-  <section class="banda banda-malva centro">
-    <div class="wrap">
-      <h2>Quién soy</h2>
-      <a class="btn" href="quien-soy.html">Entrar</a>
+  <section class="banda banda-malva">
+    <div class="wrap dos">
+      <div class="foto-marco"><img src="assets/img/quien-soy-01.jpg" alt="Daniela Balzo cosiendo en su taller" loading="lazy"></div>
+      <div>
+        <p class="script">Hola!</p>
+        <h2 class="hilo">Quién soy</h2>
+        <p>Soy Daniela, diseñadora gráfica (UDP) y arte terapeuta (U de Chile), dedicada al diseño de vestuario desde 2012.</p>
+        <p>Soy recicladora: me encanta darle una nueva vida a prendas en desuso y ayudar a disminuir la contaminación textil. En mi taller enseño costura, moldaje, corte y confección.</p>
+        <div class="botones"><a class="btn" href="quien-soy.html">Entrar</a><a class="btn btn-borde" href="talleres.html">Talleres realizados</a></div>
+      </div>
     </div>
   </section>
 
-  <section class="banda banda-lila centro">
+  <section class="banda banda-lila">
     <div class="wrap">
-      <h2 id="cursos-titulo">Cursos permanentes</h2>
-      <p id="cursos-texto">Entérate de toda la información de los cursos disponibles</p>
-      <a class="btn" href="cursos.html">Entrar</a>
+      <div class="encabezado-seccion centro">
+        <span class="etiqueta">Presencial y online en vivo</span>
+        <h2 class="hilo" id="cursos-titulo">Cursos permanentes</h2>
+        <p id="cursos-texto">Entérate de toda la información de los cursos disponibles</p>
+      </div>
+      <div class="tarjetas">
+        <a class="tarjeta" href="clases-grupales.html">
+          <div class="img"><img src="assets/img/cursos-02.jpg" alt="" loading="lazy"><span class="chip">En el taller</span></div>
+          <div class="cuerpo">
+            <h3>Clases grupales personalizadas</h3>
+            <p>Volvemos realidad tus proyectos, partas de cero o ya sepas coser. Máximo 3 cupos, a pasos del metro Francisco Bilbao.</p>
+            <div class="pie-tarjeta"><span class="precio">$120.000 <small>/ módulo</small></span><span class="flecha">Ver más </span></div>
+          </div>
+        </a>
+        <a class="tarjeta" href="clases-domicilio.html">
+          <div class="img"><img src="assets/img/cursos-03.jpg" alt="" loading="lazy"><span class="chip">A domicilio</span></div>
+          <div class="cuerpo">
+            <h3>Clases a domicilio</h3>
+            <p>Voy a tu casa y te enseño a usar tu máquina y a hacer los proyectos que quieras. Grupales o 1:1.</p>
+            <div class="pie-tarjeta"><span class="precio">$200.000 <small>/ módulo</small></span><span class="flecha">Ver más </span></div>
+          </div>
+        </a>
+        <a class="tarjeta" href="clases-online.html">
+          <div class="img"><img src="assets/img/cursos-04.jpg" alt="" loading="lazy"><span class="chip">Online en vivo</span></div>
+          <div class="cuerpo">
+            <h3>Clases online por Zoom</h3>
+            <p>Aprende desde tu casa, en tu espacio y a tu tiempo, con dos cámaras para que no se te escape ningún detalle.</p>
+            <div class="pie-tarjeta"><span class="precio">$120.000 <small>/ módulo</small></span><span class="flecha">Ver más </span></div>
+          </div>
+        </a>
+      </div>
+      <div class="centro" style="margin-top: 36px"><a class="btn" href="cursos.html">Entrar</a></div>
     </div>
   </section>
 
   <section class="banda">
     <div class="wrap">
-      <div class="centro angosto" style="margin-bottom: 36px">
-        <span class="etiqueta">Nuevo</span>
-        <h2 id="online-titulo">Cursos online</h2>
+      <div class="encabezado-seccion centro">
+        <span class="etiqueta">Nuevo · Aprende a tu ritmo</span>
+        <h2 class="hilo" id="online-titulo">Cursos online</h2>
         <p id="online-texto">Aprende a coser a tu ritmo, desde tu casa, con clases en video que puedes ver cuando quieras.</p>
       </div>
       <div class="tarjetas" id="destacados"></div>
-      <div class="centro" style="margin-top: 32px"><a class="btn btn-borde" href="cursos-online.html">Ver todos los cursos online</a></div>
+      <div class="centro" style="margin-top: 36px"><a class="btn btn-borde" href="cursos-online.html">Ver todos los cursos online</a></div>
+    </div>
+  </section>
+
+  <section class="banda banda-suave centro">
+    <div class="wrap">
+      <div class="encabezado-seccion">
+        <h2 class="hilo">Talleres en instituciones</h2>
+        <p>He enseñado costura y reciclaje textil en juntas de vecinos, instituciones públicas y privadas.</p>
+      </div>
+      <ul class="instituciones">
+        <li>Corporación Cultural de La Reina</li>
+        <li>Laboratorio Ciudadano, Independencia</li>
+        <li>Duoc UC</li>
+        <li>Balmaceda Arte Joven</li>
+        <li>Junta de Vecinos de Polpaico</li>
+      </ul>
+      <div class="botones" style="margin-top: 32px"><a class="btn btn-borde" href="talleres.html">Ver fotos de los talleres</a></div>
+    </div>
+  </section>
+
+  <section class="banda banda-morada centro">
+    <div class="wrap angosto">
+      <span class="etiqueta">¿Tienes un proyecto en mente?</span>
+      <h2>Desempolva tu máquina de coser</h2>
+      <p>¿No tienes máquina? No importa, ¡yo te presto! Escríbeme y vemos juntas qué curso te acomoda.</p>
+      <div class="botones">
+        <a class="btn btn-rosa" href="https://wa.me/56933701311?text=Hola%20Daniela%2C%20quiero%20informaci%C3%B3n%20sobre%20las%20clases." target="_blank" rel="noopener">Escribir por WhatsApp</a>
+        <a class="btn btn-borde-claro" href="contacto.html">Otras formas de contacto</a>
+      </div>
     </div>
   </section>
 </main>
@@ -55,24 +131,24 @@
 <script>
   (() => {
     const t = NM.textos();
-    document.getElementById('cursos-titulo').textContent = t.cursosTitulo;
-    document.getElementById('cursos-texto').textContent = t.cursosTexto;
-    document.getElementById('online-titulo').textContent = t.onlineTitulo;
-    document.getElementById('online-texto').textContent = t.onlineTexto;
+    const poner = (id, v) => { document.getElementById(id).textContent = v; };
+    poner('p-nombre', t.nombre);
+    poner('p-linea1', t.linea1);
+    poner('p-linea2', t.linea2);
+    poner('cursos-titulo', t.cursosTitulo);
+    poner('cursos-texto', t.cursosTexto);
+    poner('online-titulo', t.onlineTitulo);
+    poner('online-texto', t.onlineTexto);
     const cursos = NM.cursos().filter(c => c.publicado).slice(0, 3);
     document.getElementById('destacados').innerHTML = cursos.map(c => `
-      <article class="tarjeta">
-        <img src="assets/img/${NM.esc(c.imagen)}" alt="" loading="lazy">
+      <a class="tarjeta" href="curso.html?id=${encodeURIComponent(c.id)}">
+        <div class="img"><img src="assets/img/${NM.esc(c.imagen)}" alt="" loading="lazy"><span class="chip">${c.lecciones.length} clases en video</span></div>
         <div class="cuerpo">
-          <span class="modalidad">Online · ${c.lecciones.length} clases en video</span>
           <h3>${NM.esc(c.titulo)}</h3>
           <p>${NM.esc(c.resumen)}</p>
-          <div class="pie-tarjeta">
-            <span class="precio">${NM.clp(c.precio)}</span>
-            <a class="btn btn-chico" href="curso.html?id=${encodeURIComponent(c.id)}">Ver curso</a>
-          </div>
+          <div class="pie-tarjeta"><span class="precio">${NM.clp(c.precio)}</span><span class="flecha">Ver curso </span></div>
         </div>
-      </article>`).join('');
+      </a>`).join('');
   })();
 </script>
 </body>

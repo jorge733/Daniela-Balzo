@@ -32,7 +32,7 @@
           </div>
           <p class="nota" style="margin-top: 12px">Pago único. Acceso a los videos y materiales cuando quieras.</p>
         </div>
-        <img src="assets/img/${esc(curso.imagen)}" alt="">
+        <img class="foto" src="assets/img/${esc(curso.imagen)}" alt="">
       </div>
     </section>
     <section class="banda">
