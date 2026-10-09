@@ -18,8 +18,15 @@
     <div class="wrap">
       ${marca}
       <nav class="menu" aria-label="Menú principal">
-        <button class="menu-toggle" type="button" aria-expanded="false">Menú</button>
-        <div class="items">
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-items" aria-label="Abrir menú">
+          <span class="hamb" aria-hidden="true"><i></i><i></i><i></i></span>
+        </button>
+        <div class="menu-fondo" aria-hidden="true"></div>
+        <div class="items" id="menu-items">
+          <div class="menu-cabeza">
+            <span>Menú</span>
+            <button class="menu-cerrar" type="button" aria-label="Cerrar menú">×</button>
+          </div>
           ${enlace('index.html', 'Inicio', 'inicio')}
           <details><summary>Quién soy</summary><div>
             ${enlace('quien-soy.html', 'Quién soy', 'quien-soy')}
@@ -40,6 +47,11 @@
           ${enlace('contacto.html', 'Contacto', 'contacto')}
           ${enlace('aula.html', 'Mi aula', 'aula')}
           ${enlace('cursos-online.html', 'Cursos online', 'cursos-online', ' class="destacado"')}
+          <div class="menu-pie">
+            <a class="btn btn-rosa" href="https://wa.me/${CONTACTO.whatsapp}" target="_blank" rel="noopener">Escribir por WhatsApp</a>
+            <p><a href="mailto:${esc(CONTACTO.correo)}">${esc(CONTACTO.correo)}</a><br>
+            <a href="https://instagram.com/${esc(CONTACTO.instagram)}" target="_blank" rel="noopener">Instagram @${esc(CONTACTO.instagram)}</a></p>
+          </div>
         </div>
       </nav>
     </div>
@@ -101,17 +113,42 @@
 
   const menu = document.querySelector('.menu');
   const boton = menu.querySelector('.menu-toggle');
-  boton.addEventListener('click', () => {
-    const abierto = menu.classList.toggle('abierto');
-    boton.setAttribute('aria-expanded', abierto);
-    boton.textContent = abierto ? 'Cerrar' : 'Menú';
-  });
-  // Un solo submenú abierto a la vez, y se cierran al hacer clic fuera
   const submenus = menu.querySelectorAll('details');
+
+  // Menú móvil: panel lateral con fondo oscuro
+  const abrirMenu = (abrir) => {
+    menu.classList.toggle('abierto', abrir);
+    document.documentElement.classList.toggle('menu-abierto', abrir);
+    boton.setAttribute('aria-expanded', abrir);
+    boton.setAttribute('aria-label', abrir ? 'Cerrar menú' : 'Abrir menú');
+    if (abrir) {
+      // Deja abierta la sección de la página actual
+      submenus.forEach(d => { d.open = !!d.querySelector('[aria-current="page"]'); });
+      setTimeout(() => menu.querySelector('.menu-cerrar').focus(), 60);
+    } else {
+      boton.focus();
+    }
+  };
+  boton.addEventListener('click', () => abrirMenu(!menu.classList.contains('abierto')));
+  menu.querySelector('.menu-cerrar').addEventListener('click', () => abrirMenu(false));
+  menu.querySelector('.menu-fondo').addEventListener('click', () => abrirMenu(false));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menu.classList.contains('abierto')) abrirMenu(false);
+  });
+  menu.querySelectorAll('.items a').forEach(a => a.addEventListener('click', () => {
+    if (menu.classList.contains('abierto')) abrirMenu(false);
+  }));
+  // Si se agranda la ventana con el menú abierto, se cierra
+  window.matchMedia('(min-width: 1081px)').addEventListener('change', (m) => {
+    if (m.matches && menu.classList.contains('abierto')) abrirMenu(false);
+  });
+
+  // Un solo submenú abierto a la vez; en escritorio se cierran al hacer clic fuera
   submenus.forEach(d => d.addEventListener('toggle', () => {
     if (d.open) submenus.forEach(o => { if (o !== d) o.open = false; });
   }));
   document.addEventListener('click', (e) => {
+    if (menu.classList.contains('abierto')) return;
     submenus.forEach(d => { if (d.open && !d.contains(e.target)) d.open = false; });
   });
 
