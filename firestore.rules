@@ -1,0 +1,62 @@
+rules_version = '2';
+
+// Quién puede leer y escribir cada colección.
+// Las compras (accesos y ventas) solo las escribe el servidor con firebase-admin.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function sesion() { return request.auth != null; }
+    function esYo(uid) { return sesion() && request.auth.uid == uid; }
+    function esAdmin() { return sesion() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function compro(cursoId) {
+      return sesion() && get(/databases/$(database)/documents/accesos/$(request.auth.uid)).data.cursos[cursoId] == true;
+    }
+
+    // Catálogo: visible si está publicado; las alumnas siguen viendo los cursos que compraron.
+    match /cursos/{cursoId} {
+      allow read: if resource.data.publicado == true || esAdmin() || compro(cursoId);
+      allow write: if esAdmin();
+    }
+
+    // Textos editables del sitio
+    match /sitio/{documento} {
+      allow read: if true;
+      allow write: if esAdmin();
+    }
+
+    // Perfil de cada alumna
+    match /usuarios/{uid} {
+      allow read: if esYo(uid) || esAdmin();
+      allow create: if esYo(uid)
+        && request.resource.data.keys().hasOnly(['nombre', 'correo', 'creado'])
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() <= 100
+        && request.resource.data.correo == request.auth.token.email;
+      allow update: if esYo(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre'])
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() <= 100;
+    }
+
+    // Cursos comprados: { cursos: { <cursoId>: true } }
+    match /accesos/{uid} {
+      allow read: if esYo(uid) || esAdmin();
+      allow write: if false;
+    }
+
+    // Avance: { <cursoId>: [índices de clases terminadas] }
+    match /progreso/{uid} {
+      allow read: if esYo(uid);
+      allow write: if esYo(uid) && request.resource.data.size() <= 200;
+    }
+
+    match /ventas/{pagoId} {
+      allow read: if esAdmin();
+      allow write: if false;
+    }
+
+    // Cuentas con acceso al panel (se crean con scripts/crear-admin.mjs)
+    match /admins/{uid} {
+      allow read: if esYo(uid);
+      allow write: if false;
+    }
+  }
+}

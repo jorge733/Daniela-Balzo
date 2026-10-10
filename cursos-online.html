@@ -13,13 +13,12 @@
 <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body data-pagina="cursos-online">
-<div class="aviso"><b>Prototipo:</b> los precios, videos y pagos son de ejemplo. Puedes probar la compra sin pagar nada.</div>
 <main>
   <header class="cabeza">
     <div class="wrap">
       <span class="etiqueta">Aprende a tu ritmo</span>
-      <h1 id="titulo">Cursos online</h1>
-      <p id="texto">Aprende a coser a tu ritmo, desde tu casa, con clases en video que puedes ver cuando quieras.</p>
+      <h1 id="titulo" data-texto="onlineTitulo">Cursos online</h1>
+      <p id="texto" data-texto="onlineTexto">Aprende a coser a tu ritmo, desde tu casa, con clases en video que puedes ver cuando quieras.</p>
     </div>
   </header>
 
@@ -42,30 +41,18 @@
 </main>
 <script src="assets/js/datos.js"></script>
 <script src="assets/js/layout.js"></script>
-<script>
-  (() => {
-    const t = NM.textos();
-    document.getElementById('titulo').textContent = t.onlineTitulo;
-    document.getElementById('texto').textContent = t.onlineTexto;
-    const u = NM.usuarioActual();
-    const cursos = NM.cursos().filter(c => c.publicado);
-    document.getElementById('catalogo').innerHTML = cursos.length ? cursos.map(c => {
-      const tiene = u && u.cursos.includes(c.id);
-      return `
-      <article class="tarjeta">
-        <img src="assets/img/${NM.esc(c.imagen)}" alt="" loading="lazy">
+<script type="module">
+  import { cursosPublicados } from "./assets/js/publico.js";
+  const cursos = await cursosPublicados();
+  document.getElementById("catalogo").innerHTML = cursos.length ? `${cursos.map(c => `
+      <a class="tarjeta" href="curso.html?id=${encodeURIComponent(c.id)}">
+        <div class="img"><img src="${NM.esc(NM.imagen(c))}" alt="" loading="lazy"><span class="chip">${c.lecciones.length} clases en video</span></div>
         <div class="cuerpo">
-          <span class="modalidad">${c.lecciones.length} clases en video</span>
           <h3>${NM.esc(c.titulo)}</h3>
           <p>${NM.esc(c.resumen)}</p>
-          <div class="pie-tarjeta">
-            <span class="precio">${tiene ? 'Ya es tuyo' : NM.clp(c.precio)}</span>
-            <a class="btn btn-chico" href="${tiene ? 'aula.html?curso=' : 'curso.html?id='}${encodeURIComponent(c.id)}">${tiene ? 'Ir al aula' : 'Ver curso'}</a>
-          </div>
+          <div class="pie-tarjeta"><span class="precio">${NM.clp(c.precio)}</span><span class="flecha">Ver curso </span></div>
         </div>
-      </article>`;
-    }).join('') : '<p class="vacio">Pronto habrá cursos disponibles.</p>';
-  })();
+      </a>`).join("")}` : "<p class=\"vacio\">Pronto habrá cursos disponibles.</p>";
 </script>
 </body>
 </html>

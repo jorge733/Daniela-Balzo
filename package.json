@@ -1,0 +1,15 @@
+{
+  "name": "negramora-sitio",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "emuladores": "firebase emulators:start --project demo-negramora --import=.emuladores --export-on-exit=.emuladores",
+    "sembrar": "node scripts/sembrar.mjs",
+    "dev": "node scripts/dev.mjs",
+    "admin": "node scripts/crear-admin.mjs --emuladores"
+  },
+  "dependencies": {
+    "firebase-admin": "14.5.0"
+  }
+}

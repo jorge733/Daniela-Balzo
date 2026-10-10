@@ -1,0 +1,27 @@
+rules_version = '2';
+
+// Videos y materiales: solo Daniela los sube. Las alumnas los ven con un enlace
+// temporal que entrega /api/archivo después de revisar que compraron el curso.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function esAdmin() {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
+    }
+
+    // Fotos de portada de los cursos (públicas)
+    match /portadas/{archivo} {
+      allow read: if true;
+      allow write: if esAdmin()
+        && (request.resource == null
+            || (request.resource.size < 10 * 1024 * 1024 && request.resource.contentType.matches('image/.*')));
+    }
+
+    match /cursos/{cursoId}/{ruta=**} {
+      allow read: if esAdmin();
+      allow write: if esAdmin()
+        && (request.resource == null || request.resource.size < 5 * 1024 * 1024 * 1024);
+    }
+  }
+}

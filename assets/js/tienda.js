@@ -1,22 +1,22 @@
-/* Ficha de un curso online y compra simulada.
-   En la versión final, el botón de pago abre el checkout de Mercado Pago y
-   el acceso se activa cuando Mercado Pago confirma el pago. */
-(() => {
-  const { esc, clp } = NM;
-  const id = new URLSearchParams(location.search).get('id');
-  const curso = NM.curso(id);
-  const main = document.getElementById('contenido');
+/* Ficha de un curso online y compra con Mercado Pago.
+   El acceso lo activa el servidor cuando Mercado Pago confirma el pago. */
+import * as nube from './nube.js';
 
-  if (!curso || !curso.publicado) {
-    main.innerHTML = `<section class="banda"><div class="wrap centro"><h1>Curso no encontrado</h1>
-      <p>Puede que ya no esté disponible.</p><a class="btn" href="cursos-online.html">Ver cursos online</a></div></section>`;
-    return;
-  }
+const { esc, clp } = NM;
+const id = new URLSearchParams(location.search).get('id');
+const main = document.getElementById('contenido');
+const $ = (x) => document.getElementById(x);
+
+const [curso, usuario] = await Promise.all([id ? nube.curso(id) : null, nube.usuarioListo()]);
+
+if (!curso || !curso.publicado) {
+  main.innerHTML = `<section class="banda"><div class="wrap centro"><h1>Curso no encontrado</h1>
+    <p>Puede que ya no esté disponible.</p><a class="btn" href="cursos-online.html">Ver cursos online</a></div></section>`;
+} else {
   document.title = curso.titulo + ' | Daniela Balzo · Negra Mora';
+  let tiene = usuario ? (await nube.misCursos(usuario)).includes(curso.id) : false;
 
   const pintar = () => {
-    const u = NM.usuarioActual();
-    const tiene = u && u.cursos.includes(curso.id);
     main.innerHTML = `
     <section class="banda banda-lila">
       <div class="wrap dos">
@@ -31,8 +31,10 @@
               : `<button class="btn" id="comprar" type="button">Comprar curso</button>`}
           </div>
           <p class="nota" style="margin-top: 12px">Pago único. Acceso a los videos y materiales cuando quieras.</p>
+          ${new URLSearchParams(location.search).get('pago') === 'error'
+            ? '<p class="error" style="margin-top: 12px">El pago no se completó. No se cobró nada; puedes intentarlo otra vez.</p>' : ''}
         </div>
-        <img class="foto" src="assets/img/${esc(curso.imagen)}" alt="">
+        <img class="foto" src="${esc(NM.imagen(curso))}" alt="">
       </div>
     </section>
     <section class="banda">
@@ -40,86 +42,92 @@
         <div>
           <h2>Qué vas a aprender</h2>
           <ol class="linea-tiempo">
-            ${curso.lecciones.map((l, i) => `<li><b>Clase ${i + 1}</b><span>${esc(l.titulo)} <span class="nota">· ${esc(l.duracion || '')}</span></span></li>`).join('')}
+            ${curso.lecciones.map((l, i) => `<li><b>Clase ${i + 1}</b><span>${esc(l.titulo)}${l.duracion ? ` <span class="nota">· ${esc(l.duracion)}</span>` : ''}</span></li>`).join('')}
           </ol>
         </div>
         <div class="ficha">
           <h3>Incluye</h3>
           <ul>
             <li>${curso.lecciones.length} clases en video para ver cuando quieras</li>
-            ${(curso.materiales || []).map(m => `<li>${esc(m)}</li>`).join('')}
+            ${curso.materiales.map(m => `<li>${esc(m.nombre)}</li>`).join('')}
             <li>Consultas por WhatsApp mientras haces el curso</li>
           </ul>
           <h3 style="margin-top: 18px">Necesitas</h3>
-          <p>Una máquina de coser que funcione y materiales básicos de costura. ¿No sabes qué comprar? <a href="contacto.html">Escríbeme</a>.</p>
+          <p>${curso.requisitos ? esc(curso.requisitos) : 'Una máquina de coser que funcione y materiales básicos de costura.'} ¿Dudas? <a href="contacto.html">Escríbeme</a>.</p>
         </div>
       </div>
     </section>`;
-    const b = document.getElementById('comprar');
+    const b = $('comprar');
     if (b) b.addEventListener('click', abrir);
   };
 
   // ---------- Compra ----------
-  const modal = document.getElementById('modal');
-  const $ = (x) => document.getElementById(x);
-  // Solo para el prototipo: no guarda la contraseña en texto plano.
-  const hash = (s) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7).toString(16);
+  const modal = $('modal');
+  let modoEntrar = false;
 
   function abrir() {
-    const u = NM.usuarioActual();
+    const u = nube.usuarioActual();
     $('m-curso').textContent = curso.titulo;
     $('m-precio').textContent = clp(curso.precio);
     $('campos-cuenta').hidden = !!u;
-    $('campos-cuenta').querySelectorAll('input').forEach(i => i.required = !u);
-    $('m-ya-cuenta').textContent = u ? `Comprarás con tu cuenta ${u.correo}.` : '';
+    $('m-ya-cuenta').textContent = u ? `Comprarás con tu cuenta ${u.email}.` : '';
     $('m-error').textContent = '';
+    cambiarModo(false);
     $('paso-cuenta').hidden = false;
     $('paso-pagando').hidden = true;
-    $('paso-listo').hidden = true;
     modal.hidden = false;
     (u ? modal.querySelector('.mp') : $('m-nombre')).focus();
   }
-  const cerrar = () => { modal.hidden = true; pintar(); };
+
+  // Alterna entre "crear cuenta" y "ya tengo cuenta"
+  function cambiarModo(entrar) {
+    modoEntrar = entrar;
+    $('m-campo-nombre').hidden = entrar;
+    $('m-nombre').required = !entrar && !nube.usuarioActual();
+    $('m-clave').autocomplete = entrar ? 'current-password' : 'new-password';
+    $('m-etiqueta-clave').firstChild.textContent = entrar ? 'Contraseña' : 'Crea una contraseña';
+    $('m-modo').textContent = entrar ? '¿Primera vez? Crea tu cuenta' : '¿Ya tienes cuenta? Entra aquí';
+    $('m-olvide').hidden = !entrar;
+  }
+  $('m-modo').onclick = () => { cambiarModo(!modoEntrar); $('m-error').textContent = ''; };
+  $('m-olvide').onclick = async () => {
+    const correo = $('m-correo').value.trim();
+    if (!correo) { $('m-error').textContent = 'Escribe tu correo y vuelve a hacer clic.'; return; }
+    try { await nube.recuperarClave(correo); } catch (e) {}
+    $('m-error').textContent = 'Si ese correo tiene cuenta, te llegará un enlace para crear una contraseña nueva.';
+  };
+
+  const cerrar = () => { modal.hidden = true; };
   modal.querySelectorAll('[data-cerrar]').forEach(b => b.onclick = cerrar);
   modal.addEventListener('click', (e) => { if (e.target === modal) cerrar(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) cerrar(); });
 
-  $('paso-cuenta').addEventListener('submit', (e) => {
+  $('paso-cuenta').addEventListener('submit', async (e) => {
     e.preventDefault();
-    let u = NM.usuarioActual();
-    const usuarios = NM.usuarios();
-    if (!u) {
-      const correo = $('m-correo').value.trim().toLowerCase();
-      const existente = usuarios.find(x => x.correo === correo);
-      if (existente && existente.clave !== hash($('m-clave').value)) {
-        $('m-error').textContent = 'Ese correo ya tiene cuenta y la contraseña no coincide. Entra desde "Mi aula" o usa otro correo.';
-        return;
+    const boton = modal.querySelector('.mp');
+    boton.disabled = true;
+    $('m-error').textContent = '';
+    try {
+      let u = nube.usuarioActual();
+      if (!u) {
+        const correo = $('m-correo').value.trim();
+        const clave = $('m-clave').value;
+        u = modoEntrar ? await nube.entrar(correo, clave) : await nube.crearCuenta($('m-nombre').value.trim(), correo, clave);
       }
-      u = existente || { nombre: $('m-nombre').value.trim(), correo, clave: hash($('m-clave').value), cursos: [], creado: Date.now() };
-      if (!existente) usuarios.push(u);
-    }
-    // Simula el paso por Mercado Pago
-    $('paso-cuenta').hidden = true;
-    $('paso-pagando').hidden = false;
-    let p = 0;
-    const timer = setInterval(() => {
-      p += 20;
-      $('m-barra').style.width = p + '%';
-      if (p < 100) return;
-      clearInterval(timer);
-      const yo = usuarios.find(x => x.correo === u.correo);
-      if (!yo.cursos.includes(curso.id)) yo.cursos.push(curso.id);
-      NM.guardarUsuarios(usuarios);
-      const ventas = NM.ventas();
-      ventas.unshift({ fecha: Date.now(), correo: yo.correo, nombre: yo.nombre, curso: curso.id, titulo: curso.titulo, monto: curso.precio });
-      NM.guardarVentas(ventas);
-      NM.iniciarSesion(yo.correo);
-      $('m-ir').href = 'aula.html?curso=' + encodeURIComponent(curso.id);
+      if ((await nube.misCursos(u)).includes(curso.id)) { tiene = true; cerrar(); pintar(); return; }
+      $('paso-cuenta').hidden = true;
+      $('paso-pagando').hidden = false;
+      const { url } = await nube.crearPago(curso.id);
+      location.href = url;
+    } catch (err) {
+      $('paso-cuenta').hidden = false;
       $('paso-pagando').hidden = true;
-      $('paso-listo').hidden = false;
-      $('m-ir').focus();
-    }, 250);
+      if (err.code === 'auth/email-already-in-use') cambiarModo(true);
+      $('m-error').textContent = err.code ? nube.mensajeError(err) : (err.message || 'No pudimos conectar con Mercado Pago. Intenta de nuevo.');
+    } finally {
+      boton.disabled = false;
+    }
   });
 
   pintar();
-})();
+}

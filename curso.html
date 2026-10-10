@@ -13,7 +13,6 @@
 <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body data-pagina="cursos-online">
-<div class="aviso"><b>Prototipo:</b> el pago es simulado. No se cobra nada ni se piden datos de tarjeta.</div>
 <main id="contenido">
   <section class="banda"><div class="wrap"><p class="vacio">Cargando curso…</p></div></section>
 </main>
@@ -26,30 +25,27 @@
     <form class="form" id="paso-cuenta">
       <p class="nota" id="m-ya-cuenta"></p>
       <div id="campos-cuenta">
-        <label>Nombre<input id="m-nombre" autocomplete="name" required></label>
+        <label id="m-campo-nombre">Nombre<input id="m-nombre" autocomplete="name" required></label>
         <label>Correo<input id="m-correo" type="email" autocomplete="email" required></label>
-        <label>Crea una contraseña<input id="m-clave" type="password" minlength="6" autocomplete="new-password" required></label>
+        <label id="m-etiqueta-clave">Crea una contraseña<input id="m-clave" type="password" minlength="6" autocomplete="new-password" required></label>
         <p class="nota">Con este correo y contraseña entrarás a tu aula para ver el curso.</p>
+        <p class="nota"><button class="enlace" type="button" id="m-modo">¿Ya tienes cuenta? Entra aquí</button>
+          <button class="enlace" type="button" id="m-olvide" hidden>Olvidé mi contraseña</button></p>
       </div>
-      <p class="error" id="m-error"></p>
+      <p class="error" id="m-error" role="alert"></p>
       <button class="btn mp" type="submit">Pagar con Mercado Pago</button>
       <button class="btn btn-borde" type="button" data-cerrar>Cancelar</button>
     </form>
 
     <div id="paso-pagando" hidden>
-      <p>Conectando con Mercado Pago…</p>
-      <div class="barra"><span id="m-barra" style="width: 0%"></span></div>
-    </div>
-
-    <div id="paso-listo" hidden>
-      <p><b>¡Pago aprobado!</b> Ya tienes acceso a la carpeta exclusiva del curso, con todos sus videos y materiales. También te llegará un correo de confirmación.</p>
-      <div class="botones"><a class="btn" id="m-ir" href="aula.html">Abrir mi carpeta del curso</a></div>
+      <p>Te estamos llevando a Mercado Pago para pagar de forma segura…</p>
+      <div class="barra cargando"><span></span></div>
     </div>
   </div>
 </div>
 
 <script src="assets/js/datos.js"></script>
 <script src="assets/js/layout.js"></script>
-<script src="assets/js/tienda.js"></script>
+<script type="module" src="assets/js/tienda.js"></script>
 </body>
 </html>

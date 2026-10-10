@@ -7,47 +7,62 @@ Prototipo del nuevo sitio web de **Daniela Balzo** (Negra Mora Diseños): clases
 | Sección | Páginas |
 | --- | --- |
 | Sitio actual (migrado desde Wix) | `index.html`, `quien-soy.html`, `talleres.html`, `cursos.html`, `clases-online.html`, `clases-grupales.html`, `clases-domicilio.html`, `vestuario.html`, `accesorios.html`, `ilustracion-textil.html`, `arte-terapia.html`, `contacto.html` |
-| Venta de cursos online | `cursos-online.html` (catálogo), `curso.html?id=…` (ficha y compra) |
-| Aula de alumnas | `aula.html` (inicio de sesión, mis cursos, clases en video, avance) |
-| Panel de Daniela | `panel.html` (cursos, clases y videos, textos de la página, ventas) |
+| Venta de cursos online | `cursos-online.html` (catálogo), `curso.html?id=…` (ficha, cuenta y pago con Mercado Pago) |
+| Aula de alumnas | `aula.html` (inicio de sesión, mis cursos, videos, materiales y avance) |
+| Panel de Daniela | `panel.html` (cursos, subida de videos y materiales, textos de la página, ventas) |
+| Legal y errores | `terminos.html`, `privacidad.html` (borradores), `404.html` |
 
-## Cómo verlo
+## Cómo funciona
 
-Es un sitio estático, sin instalación. Ábrelo con cualquier servidor local, por ejemplo:
+- **Sitio estático** (HTML, CSS y JS sin compilar) publicado en Vercel.
+- **Firebase Authentication**: cuentas de alumnas y de Daniela (correo y contraseña, recuperación por correo).
+- **Firestore**: cursos, textos editables, accesos, avance y ventas. Las reglas están en `firestore.rules`.
+- **Firebase Storage**: videos y materiales. Solo Daniela sube; las alumnas los ven con un enlace temporal (4 horas) que entrega `/api/archivo` después de revisar que compraron el curso. Reglas en `storage.rules`.
+- **Vercel Functions** (`/api`): crean el pago en Mercado Pago, reciben la notificación (webhook), confirman el pago al volver y firman los enlaces de los videos. Las compras solo las escribe el servidor.
+
+## Probarlo en local
+
+Necesita Node 20+, Java 21 (para los emuladores) y `firebase-tools`.
 
 ```bash
-npx http-server . -p 5173
+npm install
+npm run emuladores   # terminal 1: Auth, Firestore y Storage en local (UI en http://localhost:4000)
+npm run sembrar      # una vez: cursos de ejemplo y cuentas de prueba
+npm run dev          # terminal 2: sitio y /api en http://localhost:5173
 ```
 
-y entra a http://localhost:5173.
+Cuentas de prueba (solo existen en los emuladores): `panel@prueba.test` y `alumna@prueba.test`, contraseña `prueba123`.
+Sin credenciales de Mercado Pago, el pago se simula con `/api/simular-pago` (solo funciona con emuladores).
 
-## Estado del prototipo
+## Para publicar
 
-- **Pago simulado:** el botón "Pagar con Mercado Pago" no cobra nada; simula la compra y da acceso al curso.
-- **Datos locales:** cuentas, compras, avance y cambios del panel se guardan en el navegador (`localStorage`). En el panel está el botón "Restablecer datos de prueba".
-- **Videos y materiales de ejemplo:** el reproductor muestra un espacio reservado.
-- Los cursos online, sus precios y sus clases son de ejemplo, basados en los talleres que Daniela ya ofrece.
-
-## Próximos pasos (versión final)
-
-1. Cuentas de alumnas y del panel con Firebase Authentication.
-2. Cursos, ventas y avance en Firestore; videos protegidos y materiales en almacenamiento privado.
-3. Checkout real de Mercado Pago con confirmación automática del pago (webhook) y correo de bienvenida.
-4. Términos y condiciones y política de privacidad.
-5. Publicación en Vercel con el dominio de Daniela.
+1. Crear el proyecto en Firebase y activar Authentication (correo/contraseña), Firestore y Storage (Storage requiere el plan Blaze; poner una alerta de presupuesto).
+2. Pegar la configuración web en `assets/js/config.js` y publicar las reglas: `firebase deploy --only firestore:rules,storage --project <id>`.
+3. En Vercel, cargar las variables de `.env.example` (cuenta de servicio, credenciales de Mercado Pago, clave del webhook y `SITE_URL`).
+4. En Mercado Pago, configurar el webhook a `https://<dominio>/api/webhook-mp` (evento "Pagos").
+5. Crear la cuenta de Daniela en Authentication y darle acceso al panel con `scripts/crear-admin.mjs`.
+6. Cambiar `MODO_PRUEBA` a `false` en `assets/js/datos.js`, completar lo marcado como pendiente en `terminos.html` y `privacidad.html` y conectar el dominio.
 
 ## Estructura
 
 ```
+api/                   Funciones de Vercel (Mercado Pago y enlaces de archivos)
+  _lib/                firebase-admin, Mercado Pago y utilidades
 assets/
-  css/styles.css     Estilos (paleta y tipografía del sitio original)
-  img/               Fotos del sitio de Wix, optimizadas para web
-  js/datos.js        Textos, cursos de ejemplo y guardado local
-  js/layout.js       Encabezado, menú, pie y botón de WhatsApp
-  js/galerias.js     Galerías con visor de fotos
-  js/tienda.js       Ficha de curso y compra simulada
-  js/aula.js         Aula virtual
-  js/panel.js        Panel de administración
+  css/styles.css       Estilos (paleta y tipografía del sitio original)
+  img/                 Fotos del sitio de Wix, optimizadas para web
+  js/config.js         Configuración de Firebase (emuladores en localhost)
+  js/datos.js          Contacto, textos por defecto y utilidades
+  js/nube.js           Conexión con Firebase (cuentas, cursos, archivos, /api)
+  js/publico.js        Catálogo público vía API REST (sin cargar Firebase)
+  js/layout.js         Encabezado, menú, pie, botón de WhatsApp y textos editables
+  js/galerias.js       Galerías con visor de fotos
+  js/tienda.js         Ficha de curso y compra
+  js/aula.js           Aula virtual
+  js/panel.js          Panel de administración
+scripts/               Servidor local, datos de prueba y alta de administradoras
+firestore.rules        Reglas de la base de datos
+storage.rules          Reglas de los archivos
 ```
 
 Desarrollado por [BenedettoWebs](https://benedettowebs.vercel.app) · Santiago Benedetto.

@@ -1,0 +1,12 @@
+scripts/
+.emuladores/
+firebase.json
+.firebaserc
+*.rules
+*.log
+README.md
+.env
+.env.*
+!.env.example
+cuenta-servicio*.json
+*.pem

@@ -10,7 +10,7 @@
   const marca = `
     <a class="marca-mini" href="index.html">
       <img src="assets/img/logo-01.jpg" alt="">
-      <span><strong>${esc(t.nombre)}</strong><small>Negra Mora · Clases de costura</small></span>
+      <span><strong data-texto="nombre">${esc(t.nombre)}</strong><small>Negra Mora · Clases de costura</small></span>
     </a>`;
 
   const barra = `
@@ -63,7 +63,7 @@
       <div class="cols">
         <div>
           ${marca}
-          <p>${esc(t.linea1)}.<br>${esc(t.linea2)}.</p>
+          <p><span data-texto="linea1">${esc(t.linea1)}</span>.<br><span data-texto="linea2">${esc(t.linea2)}</span>.</p>
         </div>
         <div>
           <h4>El sitio</h4>
@@ -86,8 +86,8 @@
         </div>
       </div>
       <div class="legal">
-        <span>© ${new Date().getFullYear()} Daniela Balzo · Negra Mora Diseños · <span class="sello-prototipo">Prototipo</span> desarrollado por <a href="https://benedettowebs.vercel.app" target="_blank" rel="noopener">BenedettoWebs</a></span>
-        <a href="panel.html">Panel de administración</a>
+        <span>© ${new Date().getFullYear()} Daniela Balzo · Negra Mora Diseños · ${NM.MODO_PRUEBA ? '<span class="sello-prototipo">Versión de prueba</span> ' : ''}Desarrollado por <a href="https://benedettowebs.vercel.app" target="_blank" rel="noopener">BenedettoWebs</a></span>
+        <span class="legal-links"><a href="terminos.html">Términos y condiciones</a> · <a href="privacidad.html">Privacidad</a> · <a href="panel.html">Panel</a></span>
       </div>
     </div>
   </footer>
@@ -97,9 +97,9 @@
 
   let ocultarBanner = false;
   try { ocultarBanner = sessionStorage.getItem('nm_banner') === 'no'; } catch (e) {}
-  const banner = ocultarBanner ? '' : `
+  const banner = ocultarBanner || !NM.MODO_PRUEBA ? '' : `
   <div class="banner-prototipo" role="note">
-    <b>Prototipo</b> Esta es una versión de prueba del nuevo sitio de Daniela Balzo. Los pagos, las cuentas y los cursos online son de ejemplo.
+    <b>Versión de prueba</b> Este es el nuevo sitio de Daniela Balzo en construcción. Los pagos son de prueba y no se cobra nada.
     <button type="button" aria-label="Ocultar aviso">×</button>
   </div>`;
 
@@ -110,6 +110,25 @@
     try { sessionStorage.setItem('nm_banner', 'no'); } catch (e) {}
   };
   document.body.insertAdjacentHTML('beforeend', pie);
+
+  // ---------- Textos editables desde el panel ----------
+  // Se leen con la API REST de Firestore (sin cargar Firebase en cada página) y se guardan
+  // por sesión para que no parpadeen al cambiar de página.
+  const ponerTextos = (txt) => document.querySelectorAll('[data-texto]').forEach(el => {
+    const v = txt[el.dataset.texto];
+    if (v) el.textContent = v;
+  });
+  ponerTextos(t);
+  import(new URL('config.js', document.currentScript.src)).then(async ({ FIREBASE, EMULADORES }) => {
+    const base = EMULADORES ? 'http://127.0.0.1:8080' : 'https://firestore.googleapis.com';
+    const r = await fetch(`${base}/v1/projects/${FIREBASE.projectId}/databases/(default)/documents/sitio/textos`);
+    if (!r.ok) return;
+    const campos = (await r.json()).fields || {};
+    const txt = {};
+    Object.keys(campos).forEach(k => { if (campos[k].stringValue) txt[k] = campos[k].stringValue; });
+    try { sessionStorage.setItem('nm_textos', JSON.stringify(txt)); } catch (e) {}
+    ponerTextos({ ...NM.TEXTOS, ...txt });
+  }).catch(() => {});
 
   const menu = document.querySelector('.menu');
   const boton = menu.querySelector('.menu-toggle');
