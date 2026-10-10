@@ -43,7 +43,7 @@ li::marker { color: var(--rosa-fuerte); }
 .wrap { max-width: var(--ancho); margin: 0 auto; padding-inline: 20px; }
 .centro { text-align: center; }
 .angosto { max-width: 720px; margin-inline: auto; }
-.script { font-family: var(--f-script); font-weight: 400; font-stretch: 100%; font-size: clamp(2.6rem, 5vw, 3.4rem); line-height: 1; margin: 0 0 4px; color: var(--rosa-fuerte); }
+.script { font-family: var(--f-titulo); font-weight: 600; font-stretch: 75%; font-size: clamp(1.6rem, 3.4vw, 2.1rem); line-height: 1.1; margin: 0 0 6px; color: var(--rosa-fuerte); }
 :focus-visible { outline: 3px solid var(--rosa-fuerte); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before { transition: none !important; animation: none !important; } }
 
