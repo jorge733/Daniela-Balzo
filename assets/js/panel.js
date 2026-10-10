@@ -1,320 +1,662 @@
-/* Panel privado de Daniela: cursos online (con videos y materiales), textos del sitio y ventas. */
+/* Panel privado de Daniela.
+   Pensado para usarse sin conocimientos técnicos: una cosa a la vez, palabras simples,
+   botones grandes y confirmación antes de borrar.  Secciones: #inicio, #cursos, #curso/<id>, #textos, #ventas */
 import * as nube from './nube.js';
 
 const { esc, clp } = NM;
 const main = document.getElementById('contenido');
-const IMAGENES = ['cursos-02', 'cursos-03', 'cursos-04', 'cursos-05', 'cursos-06', 'cursos-07',
-  'clases-online-01', 'clases-online-02', 'clases-online-03', 'inicio-02', 'inicio-03', 'accesorios-01', 'vestuario-01'];
-let pestaña = 'cursos';
 
-const aviso = (texto) => {
-  const t = document.getElementById('toast');
-  t.textContent = texto;
-  t.hidden = false;
-  clearTimeout(aviso.timer);
-  aviso.timer = setTimeout(() => t.hidden = true, 2600);
+// Fotos del sitio que se pueden usar como portada de un curso
+const FOTOS = ['cursos-05', 'cursos-06', 'cursos-07', 'cursos-02', 'cursos-03', 'cursos-04',
+  'clases-online-01', 'clases-online-02', 'clases-online-03', 'inicio-02', 'inicio-03', 'accesorios-01', 'vestuario-01'];
+
+// ---------- Íconos ----------
+const svg = (d, extra = '') => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${d}</svg>`;
+const ICO = {
+  inicio: svg('<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/>'),
+  cursos: svg('<rect x="3" y="5" width="14" height="14" rx="2"/><path d="m17 10 4-2.5v9L17 14"/>'),
+  textos: svg('<path d="M4 6h16M4 12h10M4 18h13"/>'),
+  ventas: svg('<rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10v.01M18 15v.01"/>'),
+  mas: svg('<path d="M12 5v14M5 12h14"/>'),
+  ok: svg('<path d="m5 12 5 5 9-10"/>'),
+  alerta: svg('<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.01"/>'),
+  subir: svg('<path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/>'),
+  volver: svg('<path d="M15 18 9 12l6-6"/>'),
+  ojo: svg('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
+  basura: svg('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'),
+  arriba: svg('<path d="m6 15 6-6 6 6"/>'),
+  abajo: svg('<path d="m6 9 6 6 6-6"/>'),
+  pdf: svg('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>'),
+  foto: svg('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>'),
+  ayuda: svg('<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17v.01"/>')
 };
 
-// Nombre de archivo seguro para Storage: "Clase 1 (final).mp4" -> "clase-1-final.mp4"
+// ---------- Avisos y confirmaciones ----------
+function avisar(texto, tipo = 'ok') {
+  const t = document.getElementById('toast');
+  t.className = 'toast toast-' + tipo;
+  t.innerHTML = (tipo === 'ok' ? ICO.ok : ICO.alerta) + `<span>${esc(texto)}</span>`;
+  t.hidden = false;
+  clearTimeout(avisar.timer);
+  avisar.timer = setTimeout(() => t.hidden = true, tipo === 'ok' ? 3500 : 7000);
+}
+
+/** Ventana de confirmación. Resuelve true si Daniela acepta. */
+function confirmar({ titulo, texto, si = 'Sí', no = 'Cancelar', peligro = false, soloAceptar = false }) {
+  return new Promise((ok) => {
+    const m = document.createElement('div');
+    m.className = 'modal';
+    m.setAttribute('role', 'alertdialog');
+    m.setAttribute('aria-modal', 'true');
+    m.innerHTML = `<div class="caja">
+      <h2 class="confirmar-titulo">${esc(titulo)}</h2>
+      <p>${texto}</p>
+      <div class="confirmar-botones">
+        ${soloAceptar ? '' : `<button class="btn btn-borde" type="button" data-r="no">${esc(no)}</button>`}
+        <button class="btn ${peligro ? 'btn-peligro' : ''}" type="button" data-r="si">${esc(si)}</button>
+      </div></div>`;
+    const cerrar = (r) => { m.remove(); document.removeEventListener('keydown', tecla); ok(r); };
+    const tecla = (e) => { if (e.key === 'Escape') cerrar(false); };
+    m.addEventListener('click', (e) => {
+      if (e.target === m) cerrar(false);
+      const b = e.target.closest('[data-r]');
+      if (b) cerrar(b.dataset.r === 'si');
+    });
+    document.addEventListener('keydown', tecla);
+    document.body.append(m);
+    // El foco parte en "Cancelar": así un Enter apurado nunca borra nada.
+    (m.querySelector('[data-r="no"]') || m.querySelector('[data-r="si"]')).focus();
+  });
+}
+
+// ---------- Estado ----------
+let sucio = false;          // hay cambios sin guardar en la pantalla actual
+let subiendo = 0;           // archivos subiéndose ahora mismo
+let hashAnterior = '';
+const marcarSucio = (s) => {
+  sucio = s;
+  const barra = document.querySelector('.barra-guardar');
+  if (barra) barra.classList.toggle('pendiente', s);
+  const estado = document.getElementById('estado-guardado');
+  if (estado) estado.innerHTML = s ? `${ICO.alerta} Tienes cambios sin guardar` : `${ICO.ok} Todo guardado`;
+};
+window.addEventListener('beforeunload', (e) => { if (sucio || subiendo) { e.preventDefault(); e.returnValue = ''; } });
+
+// Nombre de archivo seguro para Storage: "Clase 1 (final).mp4" -> "lx2k-clase-1-final.mp4"
 const nombreArchivo = (f) => {
   const punto = f.name.lastIndexOf('.');
   const base = (punto > 0 ? f.name.slice(0, punto) : f.name).normalize('NFD').replace(/[̀-ͯ]/g, '')
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'archivo';
   return `${Date.now().toString(36)}-${base}${punto > 0 ? f.name.slice(punto).toLowerCase() : ''}`;
 };
-
-// Duración de un video local, como "18 min"
 const duracionVideo = (archivo) => new Promise((ok) => {
   const v = document.createElement('video');
   v.preload = 'metadata';
-  v.onloadedmetadata = () => { URL.revokeObjectURL(v.src); ok(v.duration ? Math.max(1, Math.round(v.duration / 60)) + ' min' : ''); };
+  v.onloadedmetadata = () => { URL.revokeObjectURL(v.src); ok(Number.isFinite(v.duration) && v.duration > 0 ? Math.max(1, Math.round(v.duration / 60)) + ' min' : ''); };
   v.onerror = () => ok('');
   v.src = URL.createObjectURL(archivo);
 });
+const mb = (bytes) => bytes > 1e9 ? (bytes / 1e9).toFixed(1).replace('.', ',') + ' GB' : Math.max(1, Math.round(bytes / 1e6)) + ' MB';
+const precioTexto = (n) => Number(n || 0).toLocaleString('es-CL');
+const soloDigitos = (s) => Number(String(s).replace(/\D/g, '')) || 0;
 
+// ---------- Estructura ----------
+const SECCIONES = [
+  ['inicio', 'Inicio', ICO.inicio],
+  ['cursos', 'Mis cursos', ICO.cursos],
+  ['textos', 'Textos de mi página', ICO.textos],
+  ['ventas', 'Mis ventas', ICO.ventas]
+];
+
+function marco(activa, contenido) {
+  main.innerHTML = `
+  <section class="panel">
+    <div class="wrap">
+      <div class="panel-cabeza">
+        <p class="panel-hola">Hola, ${esc((nube.usuarioActual()?.displayName || 'Daniela').split(' ')[0])}</p>
+        <button class="btn btn-borde btn-chico" id="salir" type="button">Cerrar sesión</button>
+      </div>
+      <nav class="panel-nav" aria-label="Secciones del panel">
+        ${SECCIONES.map(([k, t, i]) => `<a href="#${k}" ${k === activa ? 'aria-current="page"' : ''}>${i}<span>${t}</span></a>`).join('')}
+      </nav>
+      <div id="zona">${contenido}</div>
+    </div>
+  </section>`;
+  document.getElementById('salir').onclick = async () => {
+    if (!await salirSinGuardar()) return;
+    await nube.salir();
+    entrada();
+  };
+  return document.getElementById('zona');
+}
+
+const cargando = (activa) => marco(activa, '<p class="vacio">Cargando…</p>');
+
+async function salirSinGuardar() {
+  if (subiendo) {
+    await confirmar({ titulo: 'Espera un momento', texto: 'Todavía se está subiendo un archivo. Espera a que termine antes de salir.', si: 'Entendido', soloAceptar: true });
+    return false;
+  }
+  if (!sucio) return true;
+  const r = await confirmar({ titulo: '¿Salir sin guardar?', texto: 'Hiciste cambios que todavía no guardas. Si sales ahora, se pierden.', si: 'Salir sin guardar', no: 'Quedarme', peligro: true });
+  if (r) marcarSucio(false);
+  return r;
+}
+
+// ---------- Inicio de sesión ----------
 function entrada(error = '') {
   main.innerHTML = `
   <section class="banda banda-lila">
-    <div class="wrap" style="max-width: 460px">
-      <h1>Panel de Daniela</h1>
-      <p>Desde aquí cambias los textos de tu página, creas cursos online, subes videos y ves tus ventas.</p>
-      <form class="form" id="f-panel">
-        <label>Correo<input id="p-correo" type="email" autocomplete="email" required></label>
-        <label>Contraseña<input id="p-clave" type="password" autocomplete="current-password" required></label>
+    <div class="wrap" style="max-width: 480px">
+      <h1>Tu panel</h1>
+      <p>Aquí cambias tu página, creas tus cursos online, subes tus videos y ves tus ventas.</p>
+      <form class="form caja-form" id="f-panel">
+        <label>Tu correo<input id="p-correo" type="email" autocomplete="email" required></label>
+        <label>Tu contraseña<input id="p-clave" type="password" autocomplete="current-password" required></label>
         <p class="error" id="p-error" role="alert">${esc(error)}</p>
-        <button class="btn" type="submit">Entrar al panel</button>
-        <p class="nota"><button class="enlace" type="button" id="p-olvide">¿Olvidaste tu contraseña?</button></p>
+        <button class="btn btn-grande" type="submit">Entrar</button>
+        <p class="nota"><button class="enlace" type="button" id="p-olvide">Olvidé mi contraseña</button></p>
       </form>
     </div>
   </section>`;
   const err = document.getElementById('p-error');
   document.getElementById('f-panel').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const b = e.target.querySelector('[type=submit]');
+    b.disabled = true;
+    b.textContent = 'Entrando…';
     try {
       await nube.entrar(document.getElementById('p-correo').value.trim(), document.getElementById('p-clave').value);
       iniciar();
-    } catch (x) { err.textContent = nube.mensajeError(x); }
+    } catch (x) {
+      err.textContent = nube.mensajeError(x);
+      b.disabled = false;
+      b.textContent = 'Entrar';
+    }
   });
   document.getElementById('p-olvide').onclick = async () => {
     const correo = document.getElementById('p-correo').value.trim();
-    if (!correo) { err.textContent = 'Escribe tu correo y vuelve a hacer clic.'; return; }
+    if (!correo) { err.textContent = 'Primero escribe tu correo arriba y vuelve a hacer clic aquí.'; return; }
     try { await nube.recuperarClave(correo); } catch (x) {}
-    err.textContent = 'Si ese correo tiene cuenta, te llegará un enlace para crear una contraseña nueva.';
+    err.textContent = 'Listo. Revisa tu correo: te llegará un enlace para crear una contraseña nueva.';
   };
 }
 
-function render() {
-  const pestañas = [['cursos', 'Cursos online'], ['textos', 'Textos de la página'], ['ventas', 'Ventas y alumnas']];
-  main.innerHTML = `
-  <section class="banda">
-    <div class="wrap">
-      <div class="pie-tarjeta" style="padding: 0; margin-bottom: 20px">
-        <h1 style="margin: 0">Hola, Daniela</h1>
-        <button class="btn btn-borde btn-chico" id="salir" type="button">Cerrar sesión</button>
-      </div>
-      <div class="panel-tabs" role="tablist">
-        ${pestañas.map(([k, t]) => `<button role="tab" type="button" data-tab="${k}" aria-selected="${k === pestaña}">${t}</button>`).join('')}
-      </div>
-      <div id="zona"><p class="vacio">Cargando…</p></div>
-    </div>
-  </section>`;
-  main.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { pestaña = b.dataset.tab; render(); });
-  document.getElementById('salir').onclick = async () => { await nube.salir(); entrada(); };
-  ({ cursos, textos, ventas })[pestaña](document.getElementById('zona')).catch(() => {
-    document.getElementById('zona').innerHTML = '<p class="error">No se pudo cargar. Revisa tu conexión y recarga la página.</p>';
+// ---------- Inicio ----------
+async function inicio() {
+  cargando('inicio');
+  const [cursos, ventas] = await Promise.all([nube.todosLosCursos(), nube.ventas()]);
+  const mes = new Date(); mes.setDate(1); mes.setHours(0, 0, 0, 0);
+  const delMes = ventas.filter(v => fechaDe(v) >= mes);
+  const visibles = cursos.filter(c => c.publicado);
+
+  // Cosas por hacer, en lenguaje simple
+  const pendientes = [];
+  cursos.forEach(c => {
+    const faltan = c.lecciones.filter(l => !l.video).length;
+    if (c.publicado && faltan) pendientes.push({ c, texto: `<b>${esc(c.titulo)}</b> ya está en tu página, pero ${faltan === 1 ? 'a 1 clase le falta' : `a ${faltan} clases les falta`} el video.` });
+    else if (!c.publicado && !faltan && c.lecciones.length) pendientes.push({ c, texto: `<b>${esc(c.titulo)}</b> tiene todos sus videos, pero todavía no se muestra en tu página.` });
   });
+
+  marco('inicio', `
+    <div class="resumen-panel">
+      <div><span>Ventas este mes</span><b>${delMes.length}</b><small>${clp(delMes.reduce((s, v) => s + (v.monto || 0), 0))}</small></div>
+      <div><span>Cursos en tu página</span><b>${visibles.length}</b><small>de ${cursos.length} en total</small></div>
+    </div>
+
+    ${pendientes.length ? `<h2 class="panel-titulo">Por hacer</h2>
+    <ul class="pendientes">${pendientes.map(p => `<li>${ICO.alerta}<span>${p.texto}</span><a class="btn btn-chico" href="#curso/${encodeURIComponent(p.c.id)}">Completar</a></li>`).join('')}</ul>` : ''}
+
+    <h2 class="panel-titulo">¿Qué quieres hacer?</h2>
+    <div class="acciones">
+      <button class="accion" type="button" id="accion-nuevo">${ICO.mas}<b>Crear un curso nuevo</b><span>Ponle nombre, precio y sube sus videos.</span></button>
+      <a class="accion" href="#cursos">${ICO.cursos}<b>Ver o cambiar mis cursos</b><span>Subir videos, cambiar precios o fotos.</span></a>
+      <a class="accion" href="#textos">${ICO.textos}<b>Cambiar textos de mi página</b><span>Tu nombre, tu descripción y los títulos.</span></a>
+      <a class="accion" href="#ventas">${ICO.ventas}<b>Ver mis ventas</b><span>Quién compró, qué curso y cuándo.</span></a>
+    </div>`);
+  document.getElementById('accion-nuevo').onclick = crearCurso;
 }
 
-// ---------- Cursos ----------
-async function cursos(zona) {
+const fechaDe = (v) => v.fecha && v.fecha.toDate ? v.fecha.toDate() : new Date(v.fecha || 0);
+
+// ---------- Lista de cursos ----------
+async function cursos() {
+  cargando('cursos');
   const lista = await nube.todosLosCursos();
-  zona.innerHTML = `
-    <div class="pie-tarjeta" style="padding: 0 0 18px">
-      <p style="margin: 0">Tienes ${lista.length} curso${lista.length === 1 ? '' : 's'} online. Los cursos <b>publicados</b> aparecen en tu página.</p>
-      <button class="btn btn-chico" id="nuevo" type="button">+ Nuevo curso</button>
+  marco('cursos', `
+    <div class="panel-barra">
+      <h2 class="panel-titulo">Mis cursos online</h2>
+      <button class="btn" type="button" id="nuevo">${ICO.mas} Crear curso nuevo</button>
     </div>
-    ${lista.length ? '' : '<p class="vacio">Aún no tienes cursos. Crea el primero con el botón "+ Nuevo curso".</p>'}
-    ${lista.map((c, n) => `
-    <form class="editor-curso form" data-n="${n}">
-      <div class="fila">
-        <label>Nombre del curso<input name="titulo" value="${esc(c.titulo)}" required maxlength="120"></label>
-        <label>Precio (CLP)<input name="precio" type="number" min="1000" step="500" value="${c.precio}" required></label>
-      </div>
-      <label>Descripción<textarea name="resumen" rows="3" maxlength="600">${esc(c.resumen)}</textarea></label>
-      <label>Qué necesita la alumna<input name="requisitos" value="${esc(c.requisitos || '')}" maxlength="300" placeholder="Una máquina de coser que funcione y materiales básicos de costura."></label>
-      <div class="fila">
-        <div class="campo-foto">
-          <img src="${esc(NM.imagen(c))}" alt="">
-          <label>Foto del curso
-            <select name="imagen">
-              ${/^https?:/.test(c.imagen) ? `<option value="${esc(c.imagen)}" selected>Foto subida</option>` : ''}
-              ${IMAGENES.map(i => `<option value="${i}.jpg" ${c.imagen === i + '.jpg' ? 'selected' : ''}>${i}</option>`).join('')}
-            </select>
-          </label>
-          <label class="btn btn-borde btn-chico subir">Subir otra foto<input type="file" accept="image/*" data-portada hidden></label>
+    <p class="ayuda">${ICO.ayuda}<span>Haz clic en un curso para cambiarlo o subirle videos. Solo los cursos marcados como <b>"En tu página"</b> los pueden ver y comprar tus alumnas.</span></p>
+    ${lista.length ? `<div class="lista-cursos">${lista.map(c => {
+      const con = c.lecciones.filter(l => l.video).length;
+      return `<a class="curso-fila" href="#curso/${encodeURIComponent(c.id)}">
+        <img src="${esc(NM.imagen(c))}" alt="">
+        <div>
+          <b>${esc(c.titulo)}</b>
+          <span class="curso-datos">${clp(c.precio)} · Videos: ${con} de ${c.lecciones.length}</span>
+          ${c.publicado ? `<span class="estado estado-ok">${ICO.ok} En tu página</span>` : '<span class="estado">Oculto (todavía no se muestra)</span>'}
         </div>
-        <label class="casilla">
-          <input type="checkbox" name="publicado" ${c.publicado ? 'checked' : ''}> Publicado en la página
+        <span class="btn btn-borde btn-chico">Abrir</span>
+      </a>`;
+    }).join('')}</div>` : `<div class="vacio"><p>Todavía no tienes cursos online.</p><button class="btn" type="button" id="nuevo-vacio">${ICO.mas} Crear mi primer curso</button></div>`}`);
+  document.getElementById('nuevo').onclick = crearCurso;
+  document.getElementById('nuevo-vacio')?.addEventListener('click', crearCurso);
+}
+
+async function crearCurso() {
+  const cursos = await nube.todosLosCursos();
+  const id = 'curso-' + Date.now().toString(36);
+  await nube.guardarCurso({ id, titulo: 'Mi curso nuevo', resumen: '', requisitos: '', precio: 30000, imagen: 'cursos-05.jpg',
+    publicado: false, orden: cursos.length, lecciones: [{ titulo: 'Clase 1', duracion: '' }], materiales: [] });
+  avisar('Curso creado. Ahora complétalo.');
+  location.hash = 'curso/' + id;
+}
+
+// ---------- Editor de un curso ----------
+async function editarCurso(id) {
+  cargando('cursos');
+  const c = await nube.curso(id);
+  if (!c) {
+    marco('cursos', '<div class="vacio"><p>Este curso ya no existe.</p><a class="btn" href="#cursos">Volver a mis cursos</a></div>');
+    return;
+  }
+  c.requisitos = c.requisitos || '';
+  pintarEditor(c);
+}
+
+function pintarEditor(c) {
+  const conVideo = c.lecciones.filter(l => l.video).length;
+  const zona = marco('cursos', `
+    <a class="volver" href="#cursos">${ICO.volver} Volver a mis cursos</a>
+    <div class="panel-barra">
+      <h2 class="panel-titulo" id="titulo-editor">${esc(c.titulo)}</h2>
+      <a class="btn btn-borde btn-chico" href="curso.html?id=${encodeURIComponent(c.id)}" target="_blank" rel="noopener">${ICO.ojo} Ver cómo se ve</a>
+    </div>
+
+    <form id="f-curso" class="editor" novalidate>
+      <section class="paso">
+        <h3><span class="num">1</span> Datos del curso</h3>
+        <label>Nombre del curso
+          <input name="titulo" value="${esc(c.titulo)}" maxlength="120" required></label>
+        <label>Precio
+          <span class="campo-precio"><span>$</span><input name="precio" inputmode="numeric" value="${precioTexto(c.precio)}" required></span>
+          <small>En pesos chilenos. Mercado Pago descuenta su comisión de cada venta.</small></label>
+        <label>Descripción
+          <textarea name="resumen" rows="4" maxlength="600" placeholder="Ej: En 4 clases aprenderás a usar tu máquina y harás 3 proyectos simples.">${esc(c.resumen)}</textarea>
+          <small>2 o 3 líneas: qué aprende la alumna y qué va a hacer.</small></label>
+        <label>¿Qué necesita la alumna?
+          <input name="requisitos" value="${esc(c.requisitos)}" maxlength="300" placeholder="Ej: una máquina de coser recta, tijeras y alfileres.">
+          <small>Opcional. Si lo dejas vacío, dice "una máquina de coser y materiales básicos".</small></label>
+      </section>
+
+      <section class="paso">
+        <h3><span class="num">2</span> Foto del curso</h3>
+        <p class="ayuda-chica">Toca la foto que quieras usar, o sube una tuya.</p>
+        <div class="fotos-elegir" role="radiogroup" aria-label="Foto del curso">
+          ${/^https?:/.test(c.imagen) ? `<button type="button" role="radio" aria-checked="true" data-foto="${esc(c.imagen)}"><img src="${esc(c.imagen)}" alt="Tu foto"></button>` : ''}
+          ${FOTOS.map(f => `<button type="button" role="radio" aria-checked="${c.imagen === f + '.jpg'}" data-foto="${f}.jpg"><img src="assets/img/${f}.jpg" alt="" loading="lazy"></button>`).join('')}
+        </div>
+        <label class="btn btn-borde subir-archivo">${ICO.foto} Subir una foto mía<input type="file" accept="image/*" id="subir-foto" hidden></label>
+      </section>
+
+      <section class="paso">
+        <h3><span class="num">3</span> Clases y videos <span class="contador">${conVideo} de ${c.lecciones.length} con video</span></h3>
+        <p class="ayuda-chica">Cada clase es un video. Los videos se guardan solos apenas terminan de subir. Usa videos <b>MP4</b>, que es como graba el celular.</p>
+        <ol class="clases">
+          ${c.lecciones.map((l, j) => `<li class="clase" data-j="${j}">
+            <div class="clase-cabeza">
+              <span class="clase-num">Clase ${j + 1}</span>
+              <div class="clase-mover">
+                <button type="button" class="icono" data-subir-clase="${j}" ${j === 0 ? 'disabled' : ''} aria-label="Mover la clase ${j + 1} hacia arriba">${ICO.arriba}</button>
+                <button type="button" class="icono" data-bajar-clase="${j}" ${j === c.lecciones.length - 1 ? 'disabled' : ''} aria-label="Mover la clase ${j + 1} hacia abajo">${ICO.abajo}</button>
+                <button type="button" class="icono peligro" data-quitar-clase="${j}" aria-label="Quitar la clase ${j + 1}">${ICO.basura}</button>
+              </div>
+            </div>
+            <label class="oculta-etiqueta">Nombre de la clase ${j + 1}<input name="leccion" data-j="${j}" value="${esc(l.titulo)}" maxlength="120"></label>
+            <div class="clase-video">
+              ${l.video
+                ? `<span class="estado estado-ok">${ICO.ok} Video listo${l.duracion ? ' · ' + esc(l.duracion) : ''}</span>
+                   <label class="btn btn-borde btn-chico">Cambiar video<input type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.m4v,.webm" data-video="${j}" hidden></label>`
+                : `<span class="estado estado-falta">Falta el video</span>
+                   <label class="btn btn-chico">${ICO.subir} Subir video<input type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.m4v,.webm" data-video="${j}" hidden></label>`}
+            </div>
+            <div class="subida" hidden><div class="progreso"><span></span></div><p></p></div>
+          </li>`).join('')}
+        </ol>
+        <button class="btn btn-borde" type="button" id="agregar-clase">${ICO.mas} Agregar otra clase</button>
+      </section>
+
+      <section class="paso">
+        <h3><span class="num">4</span> Materiales para descargar</h3>
+        <p class="ayuda-chica">Moldes, patrones o listas en PDF. Las alumnas los descargan desde su aula. Es opcional.</p>
+        ${c.materiales.length ? `<ul class="materiales">${c.materiales.map((m, k) => `<li>${ICO.pdf}<span>${esc(m.nombre)}</span>
+          <button type="button" class="icono peligro" data-quitar-material="${k}" aria-label="Quitar ${esc(m.nombre)}">${ICO.basura}</button></li>`).join('')}</ul>` : ''}
+        <label class="btn btn-borde subir-archivo">${ICO.subir} Subir un material<input type="file" accept=".pdf,image/*" id="subir-material" hidden></label>
+        <div class="subida" id="subida-material" hidden><div class="progreso"><span></span></div><p></p></div>
+      </section>
+
+      <section class="paso">
+        <h3><span class="num">5</span> ¿Mostrarlo en tu página?</h3>
+        <label class="interruptor">
+          <input type="checkbox" name="publicado" ${c.publicado ? 'checked' : ''}>
+          <span class="pista" aria-hidden="true"></span>
+          <span><b>Mostrar este curso en mi página</b><br><small>Si está apagado, el curso queda oculto: nadie lo ve ni lo puede comprar.</small></span>
         </label>
-      </div>
-      <div>
-        <b>Clases del curso</b> <span class="nota">(videos en MP4, como los graba el celular)</span>
-        <div class="lista-lecciones">
-          ${c.lecciones.map((l, j) => `<div class="leccion" data-j="${j}">
-            <input name="leccion" value="${esc(l.titulo)}" aria-label="Título de la clase ${j + 1}">
-            <span class="estado-video">${l.video ? `Video listo${l.duracion ? ' · ' + esc(l.duracion) : ''}` : 'Sin video'}</span>
-            <label class="btn btn-borde btn-chico">${l.video ? 'Cambiar video' : 'Subir video'}<input type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.m4v,.webm" data-video="${j}" hidden></label>
-            <button class="btn btn-borde btn-chico" type="button" data-quitar="${j}" aria-label="Quitar clase ${j + 1}">Quitar</button>
-            <div class="progreso" hidden><span></span></div>
-          </div>`).join('')}
-        </div>
-        <button class="btn btn-borde btn-chico" type="button" data-agregar>+ Agregar clase</button>
-      </div>
-      <div>
-        <b>Materiales descargables</b> <span class="nota">(moldes, patrones o listas en PDF)</span>
-        <ul class="lista-materiales">
-          ${c.materiales.map((m, k) => `<li><span>${esc(m.nombre)}</span><button class="btn btn-borde btn-chico" type="button" data-quitar-material="${k}">Quitar</button></li>`).join('')}
-        </ul>
-        <label class="btn btn-borde btn-chico">+ Subir material<input type="file" accept=".pdf,image/*" data-material hidden></label>
-        <div class="progreso" data-progreso-material hidden><span></span></div>
-      </div>
-      <div class="botones">
-        <button class="btn" type="submit">Guardar cambios</button>
-        <a class="btn btn-borde" href="curso.html?id=${encodeURIComponent(c.id)}" target="_blank">Ver en la página</a>
-        <button class="btn btn-borde" type="button" data-borrar>Eliminar curso</button>
-      </div>
-    </form>`).join('')}`;
+        <p class="aviso-publicar" id="aviso-publicar" hidden>${ICO.alerta}<span>Ojo: hay clases sin video. Tus alumnas verán "Daniela todavía no sube este video" en esas clases.</span></p>
+      </section>
 
-  // Lee los campos del formulario sobre el curso guardado
-  const leer = (f, c) => ({
-    ...c,
-    titulo: f.titulo.value.trim(),
-    precio: Math.round(Number(f.precio.value)),
-    resumen: f.resumen.value.trim(),
-    requisitos: f.requisitos.value.trim(),
-    imagen: f.imagen.value,
-    publicado: f.publicado.checked,
-    lecciones: [...f.querySelectorAll('[name=leccion]')].map((i, j) => ({ ...c.lecciones[j], titulo: i.value.trim() || 'Clase ' + (j + 1) }))
+      <section class="paso paso-peligro">
+        <h3>Eliminar el curso</h3>
+        <p class="ayuda-chica">Si ya no quieres venderlo, es mejor ocultarlo (paso 5). Eliminar lo borra para siempre.</p>
+        <button class="btn btn-borde btn-peligro-borde" type="button" id="borrar-curso">${ICO.basura} Eliminar este curso</button>
+      </section>
+
+      <div class="barra-guardar">
+        <span id="estado-guardado">${ICO.ok} Todo guardado</span>
+        <button class="btn btn-grande" type="submit">Guardar cambios</button>
+      </div>
+    </form>`);
+
+  const f = zona.querySelector('#f-curso');
+  marcarSucio(false);
+
+  // Lee lo escrito en el formulario
+  const leer = () => {
+    c.titulo = f.titulo.value.trim() || 'Curso sin nombre';
+    c.precio = soloDigitos(f.precio.value);
+    c.resumen = f.resumen.value.trim();
+    c.requisitos = f.requisitos.value.trim();
+    c.publicado = f.publicado.checked;
+    f.querySelectorAll('[name=leccion]').forEach((i) => {
+      const j = Number(i.dataset.j);
+      c.lecciones[j].titulo = i.value.trim() || 'Clase ' + (j + 1);
+    });
+    return c;
+  };
+  // Guarda el curso tal como está en "c" (quien llama a guardar lee antes el formulario con leer()).
+  const guardar = async (texto = 'Cambios guardados') => {
+    if (c.precio < 1000) {
+      await confirmar({ titulo: 'Revisa el precio', texto: 'El precio tiene que ser de al menos $1.000.', si: 'Entendido', soloAceptar: true });
+      f.precio.focus();
+      return false;
+    }
+    try {
+      await nube.guardarCurso(c);
+      marcarSucio(false);
+      if (texto) avisar(texto);
+      return true;
+    } catch (e) {
+      avisar('No se pudo guardar. Revisa tu internet y vuelve a intentarlo.', 'error');
+      return false;
+    }
+  };
+  // Guarda lo escrito y vuelve a dibujar el editor (después de agregar, mover o quitar)
+  const guardarYRepintar = async (texto) => { if (await guardar(texto)) pintarEditor(c); };
+
+  const avisoPublicar = () => {
+    document.getElementById('aviso-publicar').hidden = !(f.publicado.checked && c.lecciones.some(l => !l.video));
+  };
+  avisoPublicar();
+
+  f.addEventListener('input', (e) => {
+    if (e.target.type === 'file') return;
+    marcarSucio(true);
+    if (e.target.name === 'titulo') document.getElementById('titulo-editor').textContent = e.target.value || 'Curso sin nombre';
   });
-  const guardar = async (c, texto) => {
-    await nube.guardarCurso(c);
-    if (texto) aviso(texto);
+  f.publicado.addEventListener('change', avisoPublicar);
+  f.precio.addEventListener('blur', () => { f.precio.value = precioTexto(soloDigitos(f.precio.value)); });
+  f.addEventListener('submit', (e) => { e.preventDefault(); leer(); guardar(); });
+
+  // Foto
+  f.querySelectorAll('[data-foto]').forEach(b => b.onclick = () => {
+    f.querySelectorAll('[data-foto]').forEach(x => x.setAttribute('aria-checked', x === b));
+    c.imagen = b.dataset.foto;
+    marcarSucio(true);
+  });
+  document.getElementById('subir-foto').onchange = async (e) => {
+    const archivo = e.target.files[0];
+    e.target.value = '';
+    if (!archivo) return;
+    if (archivo.size > 8 * 1024 * 1024) {
+      await confirmar({ titulo: 'La foto es muy pesada', texto: `Pesa ${mb(archivo.size)} y el máximo es 8 MB. Prueba con otra foto o envíatela por WhatsApp a ti misma para que se achique.`, si: 'Entendido', soloAceptar: true });
+      return;
+    }
+    avisar('Subiendo la foto…');
+    try {
+      const ruta = await nube.subirArchivo(`portadas/${nombreArchivo(archivo)}`, archivo);
+      leer();
+      c.imagen = await nube.urlPublica(ruta);
+      await guardarYRepintar('Foto subida y guardada');
+    } catch (x) { avisar('No se pudo subir la foto. Intenta de nuevo.', 'error'); }
   };
 
-  document.getElementById('nuevo').onclick = async () => {
-    const id = 'curso-' + Date.now().toString(36);
-    await guardar({ id, titulo: 'Nuevo curso', resumen: '', requisitos: '', precio: 30000, imagen: 'cursos-05.jpg',
-      publicado: false, orden: lista.length, lecciones: [{ titulo: 'Clase 1', duracion: '' }], materiales: [] }, 'Curso creado. Complétalo y publícalo.');
-    cursos(zona);
+  // Clases (no se reordenan mientras sube un video, para que no termine en otra clase)
+  const esperarSubida = async () => {
+    if (!subiendo) return false;
+    await confirmar({ titulo: 'Espera un momento', texto: 'Hay un archivo subiéndose. Cuando termine, podrás agregar, mover o quitar clases.', si: 'Entendido', soloAceptar: true });
+    return true;
   };
-
-  zona.querySelectorAll('.editor-curso').forEach(f => {
-    const n = Number(f.dataset.n);
-    const c = () => lista[n];
-    const enviar = f.querySelector('[type=submit]');
-
-    f.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      lista[n] = leer(f, c());
-      if (lista[n].publicado && !lista[n].lecciones.some(l => l.video)) aviso('Ojo: el curso está publicado pero aún no tiene videos.');
-      await guardar(lista[n], 'Cambios guardados');
+  document.getElementById('agregar-clase').onclick = async () => {
+    if (await esperarSubida()) return;
+    leer();
+    c.lecciones.push({ titulo: 'Clase ' + (c.lecciones.length + 1), duracion: '' });
+    guardarYRepintar('Clase agregada');
+  };
+  const mover = async (j, k) => { if (await esperarSubida()) return; leer(); [c.lecciones[j], c.lecciones[k]] = [c.lecciones[k], c.lecciones[j]]; guardarYRepintar('Orden guardado'); };
+  f.querySelectorAll('[data-subir-clase]').forEach(b => b.onclick = () => mover(Number(b.dataset.subirClase), Number(b.dataset.subirClase) - 1));
+  f.querySelectorAll('[data-bajar-clase]').forEach(b => b.onclick = () => mover(Number(b.dataset.bajarClase), Number(b.dataset.bajarClase) + 1));
+  f.querySelectorAll('[data-quitar-clase]').forEach(b => b.onclick = async () => {
+    const j = Number(b.dataset.quitarClase);
+    if (await esperarSubida()) return;
+    leer();
+    if (c.lecciones.length === 1) {
+      await confirmar({ titulo: 'No se puede quitar', texto: 'Un curso necesita al menos una clase.', si: 'Entendido', soloAceptar: true });
+      return;
+    }
+    const l = c.lecciones[j];
+    const ok = await confirmar({
+      titulo: `¿Quitar la clase ${j + 1}?`,
+      texto: `Vas a quitar <b>"${esc(l.titulo)}"</b>${l.video ? ' y su video' : ''}. Esto no se puede deshacer.`,
+      si: 'Sí, quitar la clase', no: 'No, dejarla', peligro: true
     });
-    f.imagen.onchange = () => { f.querySelector('.campo-foto img').src = NM.imagen({ imagen: f.imagen.value }); };
-    f.querySelector('[data-agregar]').onclick = async () => {
-      lista[n] = leer(f, c());
-      lista[n].lecciones.push({ titulo: 'Clase ' + (lista[n].lecciones.length + 1), duracion: '' });
-      await guardar(lista[n]);
-      cursos(zona);
-    };
-    f.querySelectorAll('[data-quitar]').forEach(b => b.onclick = async () => {
-      if (!b.dataset.confirmar) { b.dataset.confirmar = '1'; b.textContent = '¿Seguro?'; return; }
-      lista[n] = leer(f, c());
-      const [quitada] = lista[n].lecciones.splice(Number(b.dataset.quitar), 1);
-      await guardar(lista[n], 'Clase quitada');
-      if (quitada.video) nube.borrarArchivo(quitada.video);
-      cursos(zona);
-    });
-    f.querySelector('[data-borrar]').onclick = async (e) => {
-      if (await nube.tieneVentas(c().id)) { aviso('Este curso ya tiene alumnas: despublícalo en vez de eliminarlo.'); return; }
-      if (!e.target.dataset.confirmar) { e.target.dataset.confirmar = '1'; e.target.textContent = '¿Seguro? Clic otra vez'; return; }
-      await nube.borrarCurso(c().id);
-      aviso('Curso eliminado');
-      cursos(zona);
-    };
+    if (!ok) return;
+    c.lecciones.splice(j, 1);
+    if (await guardar('Clase quitada')) {
+      if (l.video) nube.borrarArchivo(l.video);
+      pintarEditor(c);
+    }
+  });
 
-    // Subida de videos con barra de avance
-    f.querySelectorAll('[data-video]').forEach(inp => inp.onchange = async () => {
-      const archivo = inp.files[0];
-      if (!archivo) return;
-      if (!/\.(mp4|m4v|mov|webm)$/i.test(archivo.name)) { aviso('Ese formato no se ve en todos los celulares. Sube el video en MP4.'); inp.value = ''; return; }
-      const j = Number(inp.dataset.video);
-      const fila = f.querySelector(`.leccion[data-j="${j}"]`);
-      const barra = fila.querySelector('.progreso');
-      const estado = fila.querySelector('.estado-video');
-      barra.hidden = false;
-      enviar.disabled = true;
-      try {
-        const [ruta, duracion] = await Promise.all([
-          nube.subirArchivo(`cursos/${c().id}/videos/${nombreArchivo(archivo)}`, archivo, (p) => {
-            barra.firstElementChild.style.width = p + '%';
-            estado.textContent = `Subiendo… ${p}%`;
-          }),
-          duracionVideo(archivo)
-        ]);
-        lista[n] = leer(f, c());
-        const anterior = lista[n].lecciones[j].video;
-        lista[n].lecciones[j] = { ...lista[n].lecciones[j], video: ruta, duracion };
-        await guardar(lista[n], 'Video subido');
+  // Subir videos
+  f.querySelectorAll('[data-video]').forEach(inp => inp.onchange = async () => {
+    const archivo = inp.files[0];
+    inp.value = '';
+    if (!archivo) return;
+    if (!/\.(mp4|m4v|mov|webm)$/i.test(archivo.name)) {
+      await confirmar({ titulo: 'Ese video no sirve', texto: 'Ese formato no se ve en todos los celulares. Sube el video en <b>MP4</b>, que es como lo graba el celular.', si: 'Entendido', soloAceptar: true });
+      return;
+    }
+    const j = Number(inp.dataset.video);
+    const fila = f.querySelector(`.clase[data-j="${j}"]`);
+    const caja = fila.querySelector('.subida');
+    const barra = caja.querySelector('.progreso span');
+    const texto = caja.querySelector('p');
+    fila.querySelector('.clase-video').hidden = true;
+    caja.hidden = false;
+    subiendo++;
+    try {
+      const [ruta, duracion] = await Promise.all([
+        nube.subirArchivo(`cursos/${c.id}/videos/${nombreArchivo(archivo)}`, archivo, (p) => {
+          barra.style.width = p + '%';
+          texto.innerHTML = `<b>Subiendo video… ${p}%</b> (${mb(archivo.size)})<br>No cierres esta página hasta que termine.`;
+        }),
+        duracionVideo(archivo)
+      ]);
+      leer();
+      const anterior = c.lecciones[j].video;
+      c.lecciones[j] = { ...c.lecciones[j], video: ruta, duracion };
+      subiendo--;
+      if (await guardar(`Video de la clase ${j + 1} subido y guardado`)) {
         if (anterior) nube.borrarArchivo(anterior);
-        cursos(zona);
-      } catch (e) {
-        estado.textContent = 'No se pudo subir. Intenta de nuevo.';
-        barra.hidden = true;
-        enviar.disabled = false;
+        pintarEditor(c);
       }
-    });
-
-    // Materiales
-    f.querySelector('[data-material]').onchange = async (e) => {
-      const archivo = e.target.files[0];
-      if (!archivo) return;
-      const barra = f.querySelector('[data-progreso-material]');
-      barra.hidden = false;
-      try {
-        const ruta = await nube.subirArchivo(`cursos/${c().id}/materiales/${nombreArchivo(archivo)}`, archivo,
-          (p) => { barra.firstElementChild.style.width = p + '%'; });
-        lista[n] = leer(f, c());
-        lista[n].materiales = [...lista[n].materiales, { nombre: archivo.name.replace(/\.[^.]+$/, ''), ruta }];
-        await guardar(lista[n], 'Material subido');
-        cursos(zona);
-      } catch (x) {
-        barra.hidden = true;
-        aviso('No se pudo subir el material');
-      }
-    };
-    f.querySelectorAll('[data-quitar-material]').forEach(b => b.onclick = async () => {
-      lista[n] = leer(f, c());
-      const [quitado] = lista[n].materiales.splice(Number(b.dataset.quitarMaterial), 1);
-      await guardar(lista[n], 'Material quitado');
-      nube.borrarArchivo(quitado.ruta);
-      cursos(zona);
-    });
-
-    // Foto propia del curso
-    f.querySelector('[data-portada]').onchange = async (e) => {
-      const archivo = e.target.files[0];
-      if (!archivo) return;
-      if (archivo.size > 8 * 1024 * 1024) { aviso('La foto pesa más de 8 MB. Usa una más liviana.'); return; }
-      try {
-        const ruta = await nube.subirArchivo(`portadas/${nombreArchivo(archivo)}`, archivo);
-        lista[n] = { ...leer(f, c()), imagen: await nube.urlPublica(ruta) };
-        await guardar(lista[n], 'Foto subida');
-        cursos(zona);
-      } catch (x) { aviso('No se pudo subir la foto'); }
-    };
+    } catch (e) {
+      subiendo = Math.max(0, subiendo - 1);
+      caja.hidden = true;
+      fila.querySelector('.clase-video').hidden = false;
+      avisar('No se pudo subir el video. Revisa tu internet y vuelve a intentarlo.', 'error');
+    }
   });
+
+  // Materiales
+  document.getElementById('subir-material').onchange = async (e) => {
+    const archivo = e.target.files[0];
+    e.target.value = '';
+    if (!archivo) return;
+    const caja = document.getElementById('subida-material');
+    const barra = caja.querySelector('.progreso span');
+    caja.hidden = false;
+    subiendo++;
+    try {
+      const ruta = await nube.subirArchivo(`cursos/${c.id}/materiales/${nombreArchivo(archivo)}`, archivo, (p) => {
+        barra.style.width = p + '%';
+        caja.querySelector('p').textContent = `Subiendo… ${p}%`;
+      });
+      subiendo--;
+      leer();
+      c.materiales = [...c.materiales, { nombre: archivo.name.replace(/\.[^.]+$/, ''), ruta }];
+      await guardarYRepintar('Material subido y guardado');
+    } catch (x) {
+      subiendo = Math.max(0, subiendo - 1);
+      caja.hidden = true;
+      avisar('No se pudo subir el material. Intenta de nuevo.', 'error');
+    }
+  };
+  f.querySelectorAll('[data-quitar-material]').forEach(b => b.onclick = async () => {
+    const k = Number(b.dataset.quitarMaterial);
+    const m = c.materiales[k];
+    if (!await confirmar({ titulo: '¿Quitar este material?', texto: `Vas a quitar <b>"${esc(m.nombre)}"</b>. Tus alumnas ya no podrán descargarlo.`, si: 'Sí, quitarlo', no: 'No', peligro: true })) return;
+    leer();
+    c.materiales.splice(k, 1);
+    if (await guardar('Material quitado')) { nube.borrarArchivo(m.ruta); pintarEditor(c); }
+  });
+
+  // Eliminar curso
+  document.getElementById('borrar-curso').onclick = async () => {
+    if (await nube.tieneVentas(c.id)) {
+      await confirmar({ titulo: 'Este curso ya tiene alumnas', texto: 'Como ya lo compraron, no se puede eliminar: perderían su acceso. Si no quieres venderlo más, apaga "Mostrar este curso en mi página" (paso 5).', si: 'Entendido', soloAceptar: true });
+      return;
+    }
+    const ok = await confirmar({ titulo: '¿Eliminar este curso?', texto: `Se borrará <b>"${esc(c.titulo)}"</b> para siempre, con sus clases. Esto no se puede deshacer.`, si: 'Sí, eliminar para siempre', no: 'No, conservarlo', peligro: true });
+    if (!ok) return;
+    try {
+      await nube.borrarCurso(c.id);
+      marcarSucio(false);
+      avisar('Curso eliminado');
+      location.hash = 'cursos';
+    } catch (x) { avisar('No se pudo eliminar. Intenta de nuevo.', 'error'); }
+  };
 }
 
 // ---------- Textos ----------
-async function textos(zona) {
+const GRUPOS_TEXTOS = [
+  ['Arriba en todas las páginas y en el pie', [
+    ['nombre', 'Tu nombre', 'Aparece en grande en la portada y arriba a la izquierda.'],
+    ['linea1', 'Lo que haces', 'La primera línea bajo tu nombre en la portada.'],
+    ['linea2', 'Segunda línea', 'La línea que va justo debajo.']
+  ]],
+  ['En la página de inicio', [
+    ['cursosTitulo', 'Título de la sección de cursos', ''],
+    ['cursosTexto', 'Texto bajo ese título', '']
+  ]],
+  ['En la sección de cursos online', [
+    ['onlineTitulo', 'Título', 'Se ve en el inicio y en la página de cursos online.'],
+    ['onlineTexto', 'Texto bajo el título', '']
+  ]]
+];
+
+async function textos() {
+  cargando('textos');
   const t = { ...NM.TEXTOS, ...await nube.textos() };
-  const campos = [
-    ['nombre', 'Nombre en el encabezado'], ['linea1', 'Primera línea bajo el nombre'], ['linea2', 'Segunda línea bajo el nombre'],
-    ['cursosTitulo', 'Inicio: título de cursos'], ['cursosTexto', 'Inicio: texto de cursos'],
-    ['onlineTitulo', 'Cursos online: título'], ['onlineTexto', 'Cursos online: texto']
-  ];
-  zona.innerHTML = `
-    <form class="form angosto" id="f-textos" style="margin: 0">
-      ${campos.map(([k, l]) => `<label>${l}<input name="${k}" value="${esc(t[k])}" maxlength="200"></label>`).join('')}
-      <div class="botones"><button class="btn" type="submit">Guardar textos</button><a class="btn btn-borde" href="index.html" target="_blank">Ver la página</a></div>
-    </form>`;
-  document.getElementById('f-textos').addEventListener('submit', async (e) => {
+  marco('textos', `
+    <h2 class="panel-titulo">Textos de mi página</h2>
+    <p class="ayuda">${ICO.ayuda}<span>Cambia lo que quieras y toca <b>Guardar cambios</b>. Si borras un texto, vuelve el original.</span></p>
+    <form id="f-textos" class="editor">
+      ${GRUPOS_TEXTOS.map(([grupo, campos]) => `<section class="paso">
+        <h3>${grupo}</h3>
+        ${campos.map(([k, l, ayuda]) => `<label>${l}
+          <input name="${k}" value="${esc(t[k])}" maxlength="200">
+          ${ayuda ? `<small>${ayuda}</small>` : ''}</label>`).join('')}
+      </section>`).join('')}
+      <div class="barra-guardar">
+        <span id="estado-guardado">${ICO.ok} Todo guardado</span>
+        <a class="btn btn-borde" href="index.html" target="_blank" rel="noopener">${ICO.ojo} Ver mi página</a>
+        <button class="btn btn-grande" type="submit">Guardar cambios</button>
+      </div>
+    </form>`);
+  const f = document.getElementById('f-textos');
+  marcarSucio(false);
+  f.addEventListener('input', () => marcarSucio(true));
+  f.addEventListener('submit', async (e) => {
     e.preventDefault();
     const nuevo = {};
-    campos.forEach(([k]) => nuevo[k] = e.target[k].value.trim() || NM.TEXTOS[k]);
-    await nube.guardarTextos(nuevo);
-    try { sessionStorage.removeItem('nm_textos'); } catch (x) {}
-    aviso('Textos guardados');
+    GRUPOS_TEXTOS.forEach(([, campos]) => campos.forEach(([k]) => {
+      nuevo[k] = f[k].value.trim() || NM.TEXTOS[k];
+      f[k].value = nuevo[k];
+    }));
+    try {
+      await nube.guardarTextos(nuevo);
+      try { sessionStorage.removeItem('nm_textos'); } catch (x) {}
+      marcarSucio(false);
+      avisar('Textos guardados. Ya se ven en tu página.');
+    } catch (x) { avisar('No se pudo guardar. Revisa tu internet.', 'error'); }
   });
 }
 
 // ---------- Ventas ----------
-async function ventas(zona) {
+async function ventas() {
+  cargando('ventas');
   const [v, alumnas] = await Promise.all([nube.ventas(), nube.totalAlumnas()]);
-  const total = v.reduce((s, x) => s + (x.monto || 0), 0);
-  const fecha = (x) => (x.fecha && x.fecha.toDate ? x.fecha.toDate() : new Date(x.fecha)).toLocaleDateString('es-CL');
-  zona.innerHTML = `
-    <div class="tarjetas" style="margin-bottom: 28px">
-      <div class="ficha"><span class="modalidad">Ventas</span><div class="precio-grande">${v.length}</div></div>
-      <div class="ficha"><span class="modalidad">Total vendido</span><div class="precio-grande">${clp(total)}</div></div>
-      <div class="ficha"><span class="modalidad">Alumnas registradas</span><div class="precio-grande">${alumnas}</div></div>
+  const mes = new Date(); mes.setDate(1); mes.setHours(0, 0, 0, 0);
+  const delMes = v.filter(x => fechaDe(x) >= mes);
+  const suma = (l) => l.reduce((s, x) => s + (x.monto || 0), 0);
+  const fecha = (x) => fechaDe(x).toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
+  marco('ventas', `
+    <h2 class="panel-titulo">Mis ventas</h2>
+    <div class="resumen-panel">
+      <div><span>Este mes</span><b>${clp(suma(delMes))}</b><small>${delMes.length} venta${delMes.length === 1 ? '' : 's'}</small></div>
+      <div><span>Desde el comienzo</span><b>${clp(suma(v))}</b><small>${v.length} venta${v.length === 1 ? '' : 's'}</small></div>
+      <div><span>Alumnas registradas</span><b>${alumnas}</b><small>personas con cuenta</small></div>
     </div>
-    <p class="nota">El dinero de cada venta llega a tu cuenta de Mercado Pago, menos su comisión.</p>
-    <h2>Últimas ventas</h2>
-    ${v.length ? `<div class="tabla-wrap"><table class="tabla">
-      <thead><tr><th>Fecha</th><th>Alumna</th><th>Curso</th><th class="num">Monto</th></tr></thead>
-      <tbody>${v.map(x => `<tr><td>${fecha(x)}</td><td>${esc(x.nombre)}<br><span class="nota">${esc(x.correo)}</span></td><td>${esc(x.titulo)}</td><td class="num">${clp(x.monto)}</td></tr>`).join('')}</tbody>
-    </table></div>` : '<p class="vacio">Aún no hay ventas.</p>'}`;
+    <p class="ayuda">${ICO.ayuda}<span>El dinero llega a tu cuenta de Mercado Pago. Ahí mismo ves cuánto descontó de comisión.</span></p>
+    ${v.length ? `<ul class="ventas">${v.map(x => `<li>
+        <div><b>${esc(x.nombre || 'Alumna')}</b><span>${esc(x.correo)}</span></div>
+        <div><span>${esc(x.titulo)}</span><span>${fecha(x)}</span></div>
+        <b class="monto">${clp(x.monto)}</b>
+      </li>`).join('')}</ul>` : '<div class="vacio"><p>Todavía no tienes ventas. Cuando alguien compre un curso, aparecerá aquí.</p></div>'}`);
+}
+
+// ---------- Navegación ----------
+async function mostrar() {
+  const [seccion, id] = location.hash.slice(1).split('/');
+  if (location.hash !== hashAnterior && hashAnterior && !await salirSinGuardar()) {
+    history.replaceState(null, '', hashAnterior);
+    return;
+  }
+  hashAnterior = location.hash || '#inicio';
+  window.scrollTo({ top: 0 });
+  try {
+    if (seccion === 'curso' && id) await editarCurso(decodeURIComponent(id));
+    else if (seccion === 'cursos') await cursos();
+    else if (seccion === 'textos') await textos();
+    else if (seccion === 'ventas') await ventas();
+    else await inicio();
+  } catch (e) {
+    console.error(e);
+    marco(seccion || 'inicio', '<div class="vacio"><p>No se pudo cargar. Revisa tu internet y recarga la página.</p></div>');
+  }
 }
 
 async function iniciar() {
@@ -325,7 +667,10 @@ async function iniciar() {
     await nube.salir();
     return entrada('Esta cuenta no tiene acceso al panel.');
   }
-  render();
+  await u.getIdToken(true); // trae la marca de administradora para poder subir archivos
+  hashAnterior = '';
+  window.onhashchange = mostrar;
+  mostrar();
 }
 
 iniciar();
