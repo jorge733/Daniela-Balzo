@@ -89,13 +89,18 @@ const nombreArchivo = (f) => {
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'archivo';
   return `${Date.now().toString(36)}-${base}${punto > 0 ? f.name.slice(punto).toLowerCase() : ''}`;
 };
-const duracionVideo = (archivo) => new Promise((ok) => {
+// Duración de un video local en segundos (0 si el navegador no la sabe)
+const segundosVideo = (archivo) => new Promise((ok) => {
   const v = document.createElement('video');
   v.preload = 'metadata';
-  v.onloadedmetadata = () => { URL.revokeObjectURL(v.src); ok(Number.isFinite(v.duration) && v.duration > 0 ? Math.max(1, Math.round(v.duration / 60)) + ' min' : ''); };
-  v.onerror = () => ok('');
+  v.onloadedmetadata = () => { URL.revokeObjectURL(v.src); ok(Number.isFinite(v.duration) && v.duration > 0 ? v.duration : 0); };
+  v.onerror = () => ok(0);
   v.src = URL.createObjectURL(archivo);
 });
+const textoDuracion = (s) => s ? Math.max(1, Math.round(s / 60)) + ' min' : '';
+// Un video del celular en 720p pesa unos 45 MB por minuto; en Full HD o 4K, de 60 a 350.
+const MB_POR_MINUTO_MAX = 65;
+const MB_SIN_DURACION_MAX = 1500;
 const mb = (bytes) => bytes > 1e9 ? (bytes / 1e9).toFixed(1).replace('.', ',') + ' GB' : Math.max(1, Math.round(bytes / 1e6)) + ' MB';
 const precioTexto = (n) => Number(n || 0).toLocaleString('es-CL');
 const soloDigitos = (s) => Number(String(s).replace(/\D/g, '')) || 0;
@@ -478,6 +483,19 @@ function pintarEditor(c) {
       await confirmar({ titulo: 'Ese video no sirve', texto: 'Ese formato no se ve en todos los celulares. Sube el video en <b>MP4</b>, que es como lo graba el celular.', si: 'Entendido', soloAceptar: true });
       return;
     }
+    // Aviso si el video es muy pesado: cada vez que una alumna lo ve se gasta de la parte gratis.
+    const segundos = await segundosVideo(archivo);
+    const porMinuto = segundos ? archivo.size / 1e6 / (segundos / 60) : 0;
+    if (segundos ? porMinuto > MB_POR_MINUTO_MAX : archivo.size / 1e6 > MB_SIN_DURACION_MAX) {
+      const seguir = await confirmar({
+        titulo: 'Este video es muy pesado',
+        texto: `Pesa <b>${mb(archivo.size)}</b>${segundos ? ` (${textoDuracion(segundos)}, unos ${Math.round(porMinuto)} MB por minuto)` : ''}. Parece grabado en Full HD o 4K.<br><br>
+          Para que tu página siga siendo gratis, es mejor grabar en <b>720p</b>: se ve igual de bien en el celular y pesa varias veces menos.
+          Se cambia en la cámara del celular, en Ajustes → Grabar video o Resolución.`,
+        si: 'Subirlo igual', no: 'No, elegiré otro'
+      });
+      if (!seguir) return;
+    }
     const j = Number(inp.dataset.video);
     const fila = f.querySelector(`.clase[data-j="${j}"]`);
     const caja = fila.querySelector('.subida');
@@ -487,16 +505,13 @@ function pintarEditor(c) {
     caja.hidden = false;
     subiendo++;
     try {
-      const [ruta, duracion] = await Promise.all([
-        nube.subirArchivo(`cursos/${c.id}/videos/${nombreArchivo(archivo)}`, archivo, (p) => {
-          barra.style.width = p + '%';
-          texto.innerHTML = `<b>Subiendo video… ${p}%</b> (${mb(archivo.size)})<br>No cierres esta página hasta que termine.`;
-        }),
-        duracionVideo(archivo)
-      ]);
+      const ruta = await nube.subirArchivo(`cursos/${c.id}/videos/${nombreArchivo(archivo)}`, archivo, (p) => {
+        barra.style.width = p + '%';
+        texto.innerHTML = `<b>Subiendo video… ${p}%</b> (${mb(archivo.size)})<br>No cierres esta página hasta que termine.`;
+      });
       leer();
       const anterior = c.lecciones[j].video;
-      c.lecciones[j] = { ...c.lecciones[j], video: ruta, duracion };
+      c.lecciones[j] = { ...c.lecciones[j], video: ruta, duracion: textoDuracion(segundos), megas: Math.round(archivo.size / 1e6) };
       subiendo--;
       if (await guardar(`Video de la clase ${j + 1} subido y guardado`)) {
         if (anterior) nube.borrarArchivo(anterior);
