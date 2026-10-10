@@ -22,7 +22,7 @@ Prototipo del nuevo sitio web de **Daniela Balzo** (Negra Mora Diseños): clases
 
 ## Probarlo en local
 
-Necesita Node 20+, Java 21 (para los emuladores) y `firebase-tools`.
+Necesita Node 24, Java 21 (para los emuladores) y `firebase-tools`.
 
 ```bash
 npm install

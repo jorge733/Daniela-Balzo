@@ -10,8 +10,13 @@ export const EMULADOR = !!process.env.FIRESTORE_EMULATOR_HOST;
 
 function credenciales() {
   const crudo = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!crudo) throw new Error('Falta FIREBASE_SERVICE_ACCOUNT');
-  return JSON.parse(crudo.trim().startsWith('{') ? crudo : Buffer.from(crudo, 'base64').toString('utf8'));
+  if (!crudo) throw new Error('Falta la variable FIREBASE_SERVICE_ACCOUNT');
+  try {
+    return JSON.parse(crudo.trim().startsWith('{') ? crudo : Buffer.from(crudo, 'base64').toString('utf8'));
+  } catch (e) {
+    // Sin el mensaje original: podría incluir un trozo de la clave privada.
+    throw new Error('FIREBASE_SERVICE_ACCOUNT no es un JSON válido (¿se pegó incompleto?)');
+  }
 }
 
 if (!getApps().length) {
