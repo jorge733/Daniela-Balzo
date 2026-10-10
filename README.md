@@ -41,7 +41,8 @@ Sin credenciales de Mercado Pago, el pago se simula con `/api/simular-pago` (sol
 3. En Vercel, cargar las variables de `.env.example` (cuenta de servicio, credenciales de Mercado Pago, clave del webhook y `SITE_URL`).
 4. En Mercado Pago, configurar el webhook a `https://<dominio>/api/webhook-mp` (evento "Pagos").
 5. Crear la cuenta de Daniela en Authentication y darle acceso al panel con `scripts/crear-admin.mjs`.
-6. Cambiar `MODO_PRUEBA` a `false` en `assets/js/datos.js`, completar lo marcado como pendiente en `terminos.html` y `privacidad.html` y conectar el dominio.
+6. Con el dominio ya conectado, actualizar la vista previa al compartir: `node scripts/vista-previa.mjs https://<dominio>` (necesita Chrome y ffmpeg para regenerar la imagen; con `--sin-imagen` solo cambia las direcciones).
+7. Cambiar `MODO_PRUEBA` a `false` en `assets/js/datos.js`, completar lo marcado como pendiente en `terminos.html` y `privacidad.html` y conectar el dominio.
 
 ## Estructura
 
