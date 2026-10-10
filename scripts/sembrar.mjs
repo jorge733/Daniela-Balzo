@@ -60,6 +60,7 @@ async function cuenta(datos) {
 
 const panel = await cuenta(PANEL);
 const alumna = await cuenta(ALUMNA);
+await auth.setCustomUserClaims(panel.uid, { admin: true });
 await db.doc(`admins/${panel.uid}`).set({ correo: PANEL.email });
 await db.doc(`usuarios/${alumna.uid}`).set({ nombre: ALUMNA.displayName, correo: ALUMNA.email, creado: new Date() });
 await db.doc('sitio/textos').set({}, { merge: true });

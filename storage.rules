@@ -5,9 +5,10 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
+    // Marca "admin" en la cuenta (la pone scripts/crear-admin.mjs). Así Storage no necesita
+    // consultar Firestore, que en proyectos reales requiere un permiso extra.
     function esAdmin() {
-      return request.auth != null
-        && firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
+      return request.auth != null && request.auth.token.admin == true;
     }
 
     // Fotos de portada de los cursos (públicas)

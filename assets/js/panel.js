@@ -118,12 +118,12 @@ async function cursos(zona) {
         </label>
       </div>
       <div>
-        <b>Clases del curso</b>
+        <b>Clases del curso</b> <span class="nota">(videos en MP4, como los graba el celular)</span>
         <div class="lista-lecciones">
           ${c.lecciones.map((l, j) => `<div class="leccion" data-j="${j}">
             <input name="leccion" value="${esc(l.titulo)}" aria-label="Título de la clase ${j + 1}">
             <span class="estado-video">${l.video ? `Video listo${l.duracion ? ' · ' + esc(l.duracion) : ''}` : 'Sin video'}</span>
-            <label class="btn btn-borde btn-chico">${l.video ? 'Cambiar video' : 'Subir video'}<input type="file" accept="video/*" data-video="${j}" hidden></label>
+            <label class="btn btn-borde btn-chico">${l.video ? 'Cambiar video' : 'Subir video'}<input type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.m4v,.webm" data-video="${j}" hidden></label>
             <button class="btn btn-borde btn-chico" type="button" data-quitar="${j}" aria-label="Quitar clase ${j + 1}">Quitar</button>
             <div class="progreso" hidden><span></span></div>
           </div>`).join('')}
@@ -206,6 +206,7 @@ async function cursos(zona) {
     f.querySelectorAll('[data-video]').forEach(inp => inp.onchange = async () => {
       const archivo = inp.files[0];
       if (!archivo) return;
+      if (!/\.(mp4|m4v|mov|webm)$/i.test(archivo.name)) { aviso('Ese formato no se ve en todos los celulares. Sube el video en MP4.'); inp.value = ''; return; }
       const j = Number(inp.dataset.video);
       const fila = f.querySelector(`.leccion[data-j="${j}"]`);
       const barra = fila.querySelector('.progreso');

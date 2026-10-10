@@ -14,7 +14,8 @@ if (!correo) {
 }
 const { auth, db } = await import('../api/_lib/firebase.js');
 const u = await auth.getUserByEmail(correo);
+await auth.setCustomUserClaims(u.uid, { ...u.customClaims, admin: true }); // para las reglas de Storage
 await db.doc(`admins/${u.uid}`).set({ correo: u.email, creado: new Date() });
 await db.doc('sitio/textos').set({}, { merge: true }); // para que el sitio pueda leer los textos desde el primer día
-console.log(`Listo: ${u.email} ya puede entrar al panel.`);
+console.log(`Listo: ${u.email} ya puede entrar al panel (si tenía la sesión abierta, que la cierre y vuelva a entrar).`);
 process.exit(0);
