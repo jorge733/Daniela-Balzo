@@ -13,7 +13,7 @@ const ALUMNA = { email: 'alumna@prueba.test', password: 'prueba123', displayName
 
 const CURSOS = [
   {
-    id: 'costura-basica', orden: 0, publicado: true, precio: 35000, imagen: 'cursos-05.jpg',
+    id: 'costura-basica', orden: 0, nivel: 'basico', publicado: true, precio: 35000, imagen: 'cursos-05.jpg',
     titulo: 'Taller Costura Básica',
     resumen: 'En 4 clases aprende nociones básicas sobre enhebrado, uso y manejo de máquina de coser recta, corte y confección de 3 proyectos simples.',
     requisitos: 'Una máquina de coser recta que funcione, tijeras de tela y alfileres.',
@@ -26,7 +26,7 @@ const CURSOS = [
     materiales: []
   },
   {
-    id: 'ropa-interior', orden: 1, publicado: true, precio: 45000, imagen: 'cursos-06.jpg',
+    id: 'ropa-interior', orden: 1, nivel: 'intermedio', publicado: true, precio: 45000, imagen: 'cursos-06.jpg',
     titulo: 'Taller Ropa Interior',
     resumen: 'En 4 clases aprende a tomar medidas, a dibujar el patrón de un conjunto de ropa interior básico y a confeccionarlo con recta y overlock.',
     requisitos: 'Máquina recta y overlock, y saber lo básico de costura.',
@@ -39,7 +39,7 @@ const CURSOS = [
     materiales: []
   },
   {
-    id: 'bolsos-alforjas', orden: 2, publicado: true, precio: 40000, imagen: 'cursos-07.jpg',
+    id: 'bolsos-alforjas', orden: 2, nivel: 'basico', publicado: true, precio: 40000, imagen: 'cursos-07.jpg',
     titulo: 'Taller Bolsos y Alforjas',
     resumen: 'En 4 clases aprende a cortar y confeccionar 3 modelos de bolsos diferentes.',
     requisitos: '',

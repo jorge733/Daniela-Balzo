@@ -23,6 +23,14 @@ const NM = (() => {
     onlineTexto: 'Aprende a coser a tu ritmo, desde tu casa, con clases en video que puedes ver cuando quieras.'
   };
 
+  // Niveles de los cursos online, de lo más simple a lo más complejo
+  const NIVELES = [
+    { id: 'basico', nombre: 'Básico', titulo: 'Para empezar desde cero' },
+    { id: 'intermedio', nombre: 'Intermedio', titulo: 'Si ya sabes usar tu máquina' },
+    { id: 'avanzado', nombre: 'Avanzado', titulo: 'Para perfeccionar tu técnica' }
+  ];
+  const posNivel = (c) => Math.max(0, NIVELES.findIndex(n => n.id === c.nivel));
+
   let guardados = {};
   try { guardados = JSON.parse(sessionStorage.getItem('nm_textos') || '{}'); } catch (e) {}
 
@@ -30,6 +38,11 @@ const NM = (() => {
     MODO_PRUEBA,
     CONTACTO,
     TEXTOS,
+    NIVELES,
+    /** Nivel de un curso (los cursos sin nivel cuentan como básicos). */
+    nivel: (c) => NIVELES[posNivel(c)],
+    /** Ordena cursos de lo más simple a lo más complejo y luego por el orden del panel. */
+    ordenarCursos: (lista) => lista.sort((a, b) => posNivel(a) - posNivel(b) || (a.orden ?? 0) - (b.orden ?? 0) || a.titulo.localeCompare(b.titulo)),
     textos: () => ({ ...TEXTOS, ...guardados }),
     /** Foto de un curso: una de las fotos del sitio o una subida desde el panel. */
     imagen: (c) => /^https?:/.test(c.imagen || '') ? c.imagen : 'assets/img/' + (c.imagen || 'cursos-05.jpg'),

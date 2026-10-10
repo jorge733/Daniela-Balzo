@@ -240,7 +240,7 @@ async function cursos() {
         <img src="${esc(NM.imagen(c))}" alt="">
         <div>
           <b>${esc(c.titulo)}</b>
-          <span class="curso-datos">${clp(c.precio)} · Videos: ${con} de ${c.lecciones.length}</span>
+          <span class="curso-datos">Nivel ${NM.nivel(c).nombre.toLowerCase()} · ${clp(c.precio)} · Videos: ${con} de ${c.lecciones.length}</span>
           ${c.publicado ? `<span class="estado estado-ok">${ICO.ok} En tu página</span>` : '<span class="estado">Oculto (todavía no se muestra)</span>'}
         </div>
         <span class="btn btn-borde btn-chico">Abrir</span>
@@ -253,7 +253,7 @@ async function cursos() {
 async function crearCurso() {
   const cursos = await nube.todosLosCursos();
   const id = 'curso-' + Date.now().toString(36);
-  await nube.guardarCurso({ id, titulo: 'Mi curso nuevo', resumen: '', requisitos: '', precio: 30000, imagen: 'cursos-05.jpg',
+  await nube.guardarCurso({ id, titulo: 'Mi curso nuevo', resumen: '', requisitos: '', nivel: 'basico', precio: 30000, imagen: 'cursos-05.jpg',
     publicado: false, orden: cursos.length, lecciones: [{ titulo: 'Clase 1', duracion: '' }], materiales: [] });
   avisar('Curso creado. Ahora complétalo.');
   location.hash = 'curso/' + id;
@@ -285,6 +285,13 @@ function pintarEditor(c) {
         <h3><span class="num">1</span> Datos del curso</h3>
         <label>Nombre del curso
           <input name="titulo" value="${esc(c.titulo)}" maxlength="120" required></label>
+        <fieldset class="niveles">
+          <legend>Nivel del curso <small>Tus cursos se ordenan en la página de lo más simple a lo más avanzado.</small></legend>
+          ${NM.NIVELES.map(nv => `<label class="nivel-opcion">
+            <input type="radio" name="nivel" value="${nv.id}" ${NM.nivel(c).id === nv.id ? 'checked' : ''}>
+            <span><b>${nv.nombre}</b><small>${nv.titulo}</small></span>
+          </label>`).join('')}
+        </fieldset>
         <label>Precio
           <span class="campo-precio"><span>$</span><input name="precio" inputmode="numeric" value="${precioTexto(c.precio)}" required></span>
           <small>En pesos chilenos. Mercado Pago descuenta su comisión de cada venta.</small></label>
@@ -374,6 +381,7 @@ function pintarEditor(c) {
     c.resumen = f.resumen.value.trim();
     c.requisitos = f.requisitos.value.trim();
     c.publicado = f.publicado.checked;
+    c.nivel = f.nivel.value || 'basico';
     f.querySelectorAll('[name=leccion]').forEach((i) => {
       const j = Number(i.dataset.j);
       c.lecciones[j].titulo = i.value.trim() || 'Clase ' + (j + 1);

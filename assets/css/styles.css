@@ -429,3 +429,27 @@ html.menu-abierto .whatsapp { display: none; }
 .texto-legal ol, .texto-legal ul { padding-left: 22px; }
 .pendiente { background: #fff4c7; color: #5c4600; padding: 0 4px; border-radius: 3px; }
 p.pendiente { padding: 10px 14px; }
+
+/* ---------- Inicio: WhatsApp en la portada ---------- */
+.portada-whatsapp { max-width: calc(100% - 72px); display: inline-flex; align-items: center; gap: 12px; margin-top: 26px; padding: 10px 20px 10px 12px; background: #25d366; color: #fff; text-decoration: none; border-radius: 40px; box-shadow: 0 10px 26px -10px rgba(0,0,0,.5); text-align: left; line-height: 1.2; font-weight: 700; font-size: 1.05rem; transition: transform .2s, background .2s; }
+.portada-whatsapp:hover { background: #1ebe5b; transform: translateY(-1px); }
+.portada-whatsapp svg { width: 34px; height: 34px; fill: #fff; flex: none; }
+.portada-whatsapp small { display: block; font-weight: 600; font-size: .82rem; opacity: .95; }
+
+/* ---------- Inicio: vista de cada sección ---------- */
+.secciones { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+@media (max-width: 960px) { .secciones { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .secciones { grid-template-columns: 1fr; } }
+.secciones a { display: flex; flex-direction: column; gap: 4px; height: 100%; text-decoration: none; color: var(--tinta); background: #fff; border-radius: var(--radio); overflow: hidden; box-shadow: 0 0 0 1px var(--linea); padding-bottom: 18px; transition: transform .25s, box-shadow .25s; }
+.secciones a:hover { transform: translateY(-3px); box-shadow: var(--sombra), 0 0 0 1px var(--linea); }
+.secciones img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; margin-bottom: 10px; }
+.secciones .modalidad, .secciones b, .secciones span:last-child { padding-inline: 18px; }
+.secciones b { font: 700 1.3rem/1.15 var(--f-titulo); font-stretch: 75%; }
+.secciones span:last-child { color: var(--gris); font-size: .93rem; line-height: 1.5; }
+.tarjeta .duracion { display: block; font-size: .82rem; font-weight: 700; color: var(--morado-3); margin-bottom: 4px; }
+
+/* ---------- Cursos online agrupados por nivel ---------- */
+.nivel-grupo + .nivel-grupo { margin-top: 56px; }
+.nivel-titulo { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; font-size: clamp(1.5rem, 3vw, 2rem); margin-bottom: 22px; }
+.nivel-titulo span { display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--morado-2); color: #fff; font: 700 1.1rem var(--f-texto); font-stretch: 100%; }
+.nivel-titulo small { font: 400 1rem var(--f-texto); font-stretch: 100%; color: var(--gris); }

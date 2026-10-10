@@ -21,7 +21,7 @@ if (!curso || !curso.publicado) {
     <section class="banda banda-lila">
       <div class="wrap dos">
         <div>
-          <span class="etiqueta">Curso online · ${curso.lecciones.length} clases en video</span>
+          <span class="etiqueta">Curso online · Nivel ${NM.nivel(curso).nombre.toLowerCase()} · ${curso.lecciones.length} clases en video</span>
           <h1>${esc(curso.titulo)}</h1>
           <p>${esc(curso.resumen)}</p>
           <div class="pie-tarjeta" style="justify-content: flex-start; gap: 20px">

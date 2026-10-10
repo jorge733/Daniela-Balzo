@@ -171,6 +171,26 @@
     submenus.forEach(d => { if (d.open && !d.contains(e.target)) d.open = false; });
   });
 
+  // En computador, los submenús se abren al pasar el mouse (con una pequeña espera al salir
+  // para que no se cierren si el mouse se desvía un poco). En celular siguen abriéndose con un toque.
+  const conMouse = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 1081px)');
+  submenus.forEach(d => {
+    let cerrar;
+    d.addEventListener('mouseenter', () => {
+      if (!conMouse.matches) return;
+      clearTimeout(cerrar);
+      d.open = true;
+    });
+    d.addEventListener('mouseleave', () => {
+      if (!conMouse.matches) return;
+      cerrar = setTimeout(() => { d.open = false; }, 250);
+    });
+    // Ya abierto por el mouse, un clic en el título no lo cierra
+    d.querySelector('summary').addEventListener('click', (e) => {
+      if (conMouse.matches && d.open && e.detail > 0) e.preventDefault(); // con teclado (detail 0) sí se cierra
+    });
+  });
+
   // ---------- Animaciones ----------
   // Sin JavaScript o con "reducir movimiento" activado, todo se ve sin animar.
   const sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

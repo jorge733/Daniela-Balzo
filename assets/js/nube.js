@@ -77,7 +77,7 @@ export const guardarTextos = (t) => setDoc(doc(db, 'sitio', 'textos'), t, { merg
 // ---------- Cursos ----------
 
 const conId = (d) => ({ id: d.id, lecciones: [], materiales: [], ...d.data() });
-const ordenar = (lista) => lista.sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0) || a.titulo.localeCompare(b.titulo));
+const ordenar = (lista) => NM.ordenarCursos(lista);
 
 export async function cursosPublicados() {
   const r = await getDocs(query(collection(db, 'cursos'), where('publicado', '==', true)));

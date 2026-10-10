@@ -28,8 +28,7 @@ export async function cursosPublicados() {
     } })
   });
   if (!r.ok) return [];
-  return (await r.json())
+  return NM.ordenarCursos((await r.json())
     .filter(x => x.document)
-    .map(x => ({ id: x.document.name.split('/').pop(), lecciones: [], materiales: [], ...campos(x.document.fields || {}) }))
-    .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0) || a.titulo.localeCompare(b.titulo));
+    .map(x => ({ id: x.document.name.split('/').pop(), lecciones: [], materiales: [], ...campos(x.document.fields || {}) })));
 }
