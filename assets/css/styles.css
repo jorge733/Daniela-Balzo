@@ -158,6 +158,9 @@ li::marker { color: var(--rosa-fuerte); }
 .btn-borde-claro { background: transparent; color: #fff; border-color: rgba(255,255,255,.7); }
 .btn-borde-claro:hover { background: #fff; color: var(--morado); border-color: #fff; }
 .btn-chico { padding: 7px 16px; font-size: .85rem; }
+.btn-whatsapp { background: #25d366; border-color: #25d366; color: #fff; }
+.btn-whatsapp:hover { background: #1da851; border-color: #1da851; }
+.btn-whatsapp svg { width: 22px; height: 22px; fill: currentColor; }
 .btn[disabled] { opacity: .5; cursor: not-allowed; }
 .botones { display: flex; flex-wrap: wrap; gap: 12px; }
 .centro .botones { justify-content: center; }
@@ -220,6 +223,9 @@ a.tarjeta, .tarjeta a.cubre { text-decoration: none; color: inherit; }
 .datos-clase dd { margin: 0; }
 .fotos-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 28px; }
 .fotos-3 img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 4px; }
+.fotos-3.fotos-arriba { margin: 0 0 28px; }
+.destacado-texto { font-size: 1.15rem; line-height: 1.55; color: var(--morado-2); border-left: 4px solid var(--rosa-fuerte); padding-left: 16px; }
+.lista-check strong, .destacado-texto + p strong { color: var(--morado-2); }
 .lista-check { list-style: none; padding: 0; }
 .lista-check li { position: relative; padding-left: 28px; margin: 10px 0; }
 .lista-check li::before { content: ""; position: absolute; left: 2px; top: 8px; width: 12px; height: 6px; border-left: 2px solid var(--rosa-fuerte); border-bottom: 2px solid var(--rosa-fuerte); transform: rotate(-45deg); }

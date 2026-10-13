@@ -32,9 +32,9 @@
             ${enlace('quien-soy.html', 'Quién soy', 'quien-soy')}
             ${enlace('talleres.html', 'Talleres realizados', 'talleres')}
           </div></details>
-          <details><summary>Cursos</summary><div>
+          <details data-ir="cursos.html"><summary>Cursos</summary><div>
             ${enlace('cursos.html', 'Todos los cursos', 'cursos')}
-            ${enlace('clases-grupales.html', 'Clases grupales en el taller', 'clases-grupales')}
+            ${enlace('clases-grupales.html', 'Clases personalizadas grupales', 'clases-grupales')}
             ${enlace('clases-domicilio.html', 'Clases a domicilio', 'clases-domicilio')}
             ${enlace('clases-online.html', 'Clases online en vivo', 'clases-online')}
           </div></details>
@@ -185,9 +185,12 @@
       if (!conMouse.matches) return;
       cerrar = setTimeout(() => { d.open = false; }, 250);
     });
-    // Ya abierto por el mouse, un clic en el título no lo cierra
+    // Ya abierto por el mouse, un clic en el título no lo cierra; si la sección tiene página propia
+    // (Cursos), el clic lleva a ella
     d.querySelector('summary').addEventListener('click', (e) => {
-      if (conMouse.matches && d.open && e.detail > 0) e.preventDefault(); // con teclado (detail 0) sí se cierra
+      if (!conMouse.matches || e.detail === 0) return; // con teclado (detail 0) sí se abre y cierra
+      if (d.dataset.ir) { e.preventDefault(); location.href = d.dataset.ir; return; }
+      if (d.open) e.preventDefault();
     });
   });
 
