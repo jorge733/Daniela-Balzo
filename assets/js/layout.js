@@ -10,7 +10,7 @@
   const instagram = `<a class="marca-ig" href="https://instagram.com/${esc(CONTACTO.instagram)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>@${esc(CONTACTO.instagram)}</a>`;
 
   const marca = `
-    <a class="marca-mini" href="index.html">
+    <a class="marca-mini" href="./">
       <img src="assets/img/logo-icono.jpg" alt="">
       <span><strong data-texto="nombre">${esc(t.nombre)}</strong><small>Negra Mora · Clases de costura</small></span>
     </a>`;
@@ -29,27 +29,27 @@
             <span>Menú</span>
             <button class="menu-cerrar" type="button" aria-label="Cerrar menú">×</button>
           </div>
-          ${enlace('index.html', 'Inicio', 'inicio')}
-          <details data-ir="quien-soy.html"><summary>Quién soy</summary><div>
-            ${enlace('quien-soy.html', 'Quién soy', 'quien-soy')}
-            ${enlace('talleres.html', 'Talleres realizados', 'talleres')}
+          ${enlace('./', 'Inicio', 'inicio')}
+          <details data-ir="quien-soy"><summary>Quién soy</summary><div>
+            ${enlace('quien-soy', 'Quién soy', 'quien-soy')}
+            ${enlace('talleres', 'Talleres realizados', 'talleres')}
           </div></details>
-          <details data-ir="cursos.html"><summary>Cursos</summary><div>
-            ${enlace('cursos.html', 'Todos los cursos', 'cursos')}
-            ${enlace('cursos-online.html', 'Cursos online', 'cursos-online')}
-            ${enlace('clases-grupales.html', 'Clases personalizadas grupales', 'clases-grupales')}
-            ${enlace('clases-domicilio.html', 'Clases a domicilio', 'clases-domicilio')}
-            ${enlace('clases-online.html', 'Clases online en vivo', 'clases-online')}
+          <details data-ir="cursos"><summary>Cursos</summary><div>
+            ${enlace('cursos', 'Todos los cursos', 'cursos')}
+            ${enlace('cursos-online', 'Cursos online', 'cursos-online')}
+            ${enlace('clases-grupales', 'Clases personalizadas grupales', 'clases-grupales')}
+            ${enlace('clases-domicilio', 'Clases a domicilio', 'clases-domicilio')}
+            ${enlace('clases-online', 'Clases online en vivo', 'clases-online')}
           </div></details>
-          ${enlace('patrones.html', 'Patrones', 'patrones')}
-          <details data-ir="vestuario.html"><summary>Portafolio</summary><div>
-            ${enlace('vestuario.html', 'Vestuario', 'vestuario')}
-            ${enlace('accesorios.html', 'Accesorios', 'accesorios')}
-            ${enlace('ilustracion-textil.html', 'Ilustración textil', 'ilustracion-textil')}
-            ${enlace('arte-terapia.html', 'Arte terapia', 'arte-terapia')}
+          ${enlace('patrones', 'Patrones', 'patrones')}
+          <details data-ir="vestuario"><summary>Portafolio</summary><div>
+            ${enlace('vestuario', 'Vestuario', 'vestuario')}
+            ${enlace('accesorios', 'Accesorios', 'accesorios')}
+            ${enlace('ilustracion-textil', 'Ilustración textil', 'ilustracion-textil')}
+            ${enlace('arte-terapia', 'Arte terapia', 'arte-terapia')}
           </div></details>
-          ${enlace('contacto.html', 'Contacto', 'contacto')}
-          ${enlace('aula.html', 'Mis cursos', 'aula')}
+          ${enlace('contacto', 'Contacto', 'contacto')}
+          ${enlace('aula', 'Mis cursos', 'aula')}
           <div class="menu-pie">
             <a class="btn btn-rosa" href="https://wa.me/${CONTACTO.whatsapp}" target="_blank" rel="noopener">Escribir por WhatsApp</a>
             <p><a href="mailto:${esc(CONTACTO.correo)}">${esc(CONTACTO.correo)}</a><br>
@@ -71,12 +71,12 @@
         <div>
           <h4>El sitio</h4>
           <ul>
-            <li><a href="cursos.html">Cursos presenciales</a></li>
-            <li><a href="cursos-online.html">Cursos online</a></li>
-            <li><a href="patrones.html">Patrones</a></li>
-            <li><a href="vestuario.html">Portafolio</a></li>
-            <li><a href="talleres.html">Talleres realizados</a></li>
-            <li><a href="aula.html">Mis cursos</a></li>
+            <li><a href="cursos">Cursos presenciales</a></li>
+            <li><a href="cursos-online">Cursos online</a></li>
+            <li><a href="patrones">Patrones</a></li>
+            <li><a href="vestuario">Portafolio</a></li>
+            <li><a href="talleres">Talleres realizados</a></li>
+            <li><a href="aula">Mis cursos</a></li>
           </ul>
         </div>
         <div>
@@ -91,7 +91,7 @@
       </div>
       <div class="legal">
         <span>© ${new Date().getFullYear()} Daniela Balzo · Negra Mora Diseños · ${NM.MODO_PRUEBA ? '<span class="sello-prototipo">Versión de prueba</span> ' : ''}Desarrollado por <a href="https://benedettowebs.vercel.app" target="_blank" rel="noopener">BenedettoWebs</a></span>
-        <span class="legal-links"><a href="terminos.html">Términos y condiciones</a> · <a href="privacidad.html">Privacidad</a> · <a href="panel.html">Panel</a></span>
+        <span class="legal-links"><a href="terminos">Términos y condiciones</a> · <a href="privacidad">Privacidad</a> · <a href="panel">Panel</a></span>
       </div>
     </div>
   </footer>

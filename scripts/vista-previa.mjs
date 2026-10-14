@@ -8,7 +8,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const BASE = (process.argv[2] || 'https://daniela-balzo.vercel.app').replace(/\/$/, '');
+const BASE = (process.argv.slice(2).find(a => !a.startsWith('--')) || 'https://daniela-balzo.vercel.app').replace(/\/$/, '');
 const IMAGEN = 'assets/img/compartir.jpg';
 const NO_COMPARTIR = ['404.html', 'panel.html'];
 
@@ -42,7 +42,7 @@ for (const archivo of paginas) {
   let html = await fs.readFile(ruta, 'utf8');
   const titulo = desescapar((html.match(/<title>([^<]*)<\/title>/) || [])[1] || 'Daniela Balzo · Negra Mora');
   const desc = desescapar((html.match(/<meta name="description" content="([^"]*)">/) || [])[1] || 'Clases de costura personalizadas desde 2012.');
-  const url = BASE + '/' + (archivo === 'index.html' ? '' : archivo);
+  const url = BASE + '/' + (archivo === 'index.html' ? '' : archivo.replace(/\.html$/, ''));
   const bloque = `<!-- vista-previa -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Daniela Balzo · Negra Mora">

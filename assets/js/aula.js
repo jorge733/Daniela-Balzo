@@ -29,7 +29,7 @@ function login() {
         <p class="error" id="l-error" role="alert"></p>
         <button class="btn" type="submit">Entrar</button>
         <p class="nota"><button class="enlace" type="button" id="l-olvide">¿Olvidaste tu contraseña?</button></p>
-        <p class="nota">¿Aún no tienes cursos? <a href="cursos-online.html">Mira los cursos online</a>.</p>
+        <p class="nota">¿Aún no tienes cursos? <a href="cursos-online">Mira los cursos online</a>.</p>
       </form>
     </div>
   </section>`;
@@ -73,7 +73,7 @@ function misCarpetas(u, cursos, prog, aviso = '') {
       <p class="nota">Cada curso que compras tiene su carpeta exclusiva con los videos y materiales. Solo tú puedes abrirla.</p>
       ${cursos.length ? `<div class="tarjetas" style="margin-top: 24px">${cursos.map(c => {
         const p = avance(prog, c);
-        return `<a class="tarjeta carpeta-tarjeta" href="aula.html?curso=${encodeURIComponent(c.id)}">
+        return `<a class="tarjeta carpeta-tarjeta" href="aula?curso=${encodeURIComponent(c.id)}">
           <div class="img"><img src="${esc(NM.imagen(c))}" alt="" loading="lazy">
             <span class="chip chip-carpeta">${ICO.carpeta} Carpeta del curso</span></div>
           <div class="cuerpo">
@@ -83,10 +83,10 @@ function misCarpetas(u, cursos, prog, aviso = '') {
             <div class="pie-tarjeta"><span class="nota">${p}% completado</span><span class="flecha">${p ? 'Continuar' : 'Abrir carpeta'} </span></div>
           </div>
         </a>`;
-      }).join('')}</div>` : `<p class="vacio">Todavía no tienes cursos. <a href="cursos-online.html">Ver cursos online</a></p>`}
+      }).join('')}</div>` : `<p class="vacio">Todavía no tienes cursos. <a href="cursos-online">Ver cursos online</a></p>`}
     </div>
   </section>`;
-  document.getElementById('salir').onclick = async () => { await nube.salir(); history.replaceState(null, '', 'aula.html'); render(); };
+  document.getElementById('salir').onclick = async () => { await nube.salir(); history.replaceState(null, '', 'aula'); render(); };
 }
 
 function verCurso(u, c, prog, i) {
@@ -96,7 +96,7 @@ function verCurso(u, c, prog, i) {
   main.innerHTML = `
   <section class="banda">
     <div class="wrap">
-      <nav class="ruta" aria-label="Ubicación"><a href="aula.html">Mis carpetas</a><span aria-hidden="true">/</span><span>${esc(c.titulo)}</span></nav>
+      <nav class="ruta" aria-label="Ubicación"><a href="aula">Mis carpetas</a><span aria-hidden="true">/</span><span>${esc(c.titulo)}</span></nav>
       <div class="pie-tarjeta" style="padding: 0; align-items: flex-end">
         <div>
           <span class="etiqueta exclusiva">${ICO.candado} Carpeta exclusiva · solo para ti</span>
@@ -156,7 +156,7 @@ function verCurso(u, c, prog, i) {
   }
 
   main.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
-    history.replaceState(null, '', `aula.html?curso=${encodeURIComponent(c.id)}&clase=${Number(b.dataset.i) + 1}`);
+    history.replaceState(null, '', `aula?curso=${encodeURIComponent(c.id)}&clase=${Number(b.dataset.i) + 1}`);
     verCurso(u, c, prog, Number(b.dataset.i));
     window.scrollTo({ top: 0, behavior: 'instant' });
   });
@@ -189,7 +189,7 @@ async function confirmarRegreso() {
   const pago = params.get('payment_id') || params.get('collection_id');
   if (params.get('pago') !== 'ok' || !pago || pago === 'null') return '';
   cargando('Confirmando tu pago…');
-  history.replaceState(null, '', 'aula.html');
+  history.replaceState(null, '', 'aula');
   try {
     const r = await nube.confirmarPago(pago);
     if (r.estado === 'approved') return '<p class="exito">¡Pago aprobado! Ya tienes acceso a tu curso. Mercado Pago te enviará el comprobante a tu correo.</p>';

@@ -11,7 +11,7 @@ const [curso, usuario] = await Promise.all([id ? nube.curso(id) : null, nube.usu
 
 if (!curso || !curso.publicado) {
   main.innerHTML = `<section class="banda"><div class="wrap centro"><h1>Curso no encontrado</h1>
-    <p>Puede que ya no esté disponible.</p><a class="btn" href="cursos-online.html">Ver cursos online</a></div></section>`;
+    <p>Puede que ya no esté disponible.</p><a class="btn" href="cursos-online">Ver cursos online</a></div></section>`;
 } else {
   document.title = curso.titulo + ' | Daniela Balzo · Negra Mora';
   let tiene = usuario ? (await nube.misCursos(usuario)).includes(curso.id) : false;
@@ -27,7 +27,7 @@ if (!curso || !curso.publicado) {
           <div class="pie-tarjeta" style="justify-content: flex-start; gap: 20px">
             <span class="precio" style="font-size: 2rem">${tiene ? 'Ya es tuyo' : clp(curso.precio)}</span>
             ${tiene
-              ? `<a class="btn" href="aula.html?curso=${encodeURIComponent(curso.id)}">Ir a mis cursos</a>`
+              ? `<a class="btn" href="aula?curso=${encodeURIComponent(curso.id)}">Ir a mis cursos</a>`
               : `<button class="btn" id="comprar" type="button">Comprar curso</button>`}
           </div>
           <p class="nota" style="margin-top: 12px">Pago único. Acceso a los videos y materiales cuando quieras.</p>
@@ -53,7 +53,7 @@ if (!curso || !curso.publicado) {
             <li>Consultas por WhatsApp mientras haces el curso</li>
           </ul>
           <h3 style="margin-top: 18px">Necesitas</h3>
-          <p>${curso.requisitos ? esc(curso.requisitos) : 'Una máquina de coser que funcione y materiales básicos de costura.'} ¿Dudas? <a href="contacto.html">Escríbeme</a>.</p>
+          <p>${curso.requisitos ? esc(curso.requisitos) : 'Una máquina de coser que funcione y materiales básicos de costura.'} ¿Dudas? <a href="contacto">Escríbeme</a>.</p>
         </div>
       </div>
     </section>`;

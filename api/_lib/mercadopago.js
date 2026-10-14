@@ -39,9 +39,9 @@ export async function crearPreferencia({ curso, usuario, base }) {
       payer: { email: usuario.email },
       external_reference: ref,
       back_urls: {
-        success: `${base}/aula.html?pago=ok&curso=${encodeURIComponent(curso.id)}`,
-        pending: `${base}/aula.html?pago=ok&curso=${encodeURIComponent(curso.id)}`,
-        failure: `${base}/curso.html?id=${encodeURIComponent(curso.id)}&pago=error`
+        success: `${base}/aula?pago=ok&curso=${encodeURIComponent(curso.id)}`,
+        pending: `${base}/aula?pago=ok&curso=${encodeURIComponent(curso.id)}`,
+        failure: `${base}/curso?id=${encodeURIComponent(curso.id)}&pago=error`
       },
       auto_return: 'approved',
       notification_url: `${base}/api/webhook-mp`,

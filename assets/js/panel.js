@@ -277,7 +277,7 @@ function pintarEditor(c) {
     <a class="volver" href="#cursos">${ICO.volver} Volver a mis cursos</a>
     <div class="panel-barra">
       <h2 class="panel-titulo" id="titulo-editor">${esc(c.titulo)}</h2>
-      <a class="btn btn-borde btn-chico" href="curso.html?id=${encodeURIComponent(c.id)}" target="_blank" rel="noopener">${ICO.ojo} Ver cómo se ve</a>
+      <a class="btn btn-borde btn-chico" href="curso?id=${encodeURIComponent(c.id)}" target="_blank" rel="noopener">${ICO.ojo} Ver cómo se ve</a>
     </div>
 
     <form id="f-curso" class="editor" novalidate>
@@ -615,7 +615,7 @@ async function textos() {
       </section>`).join('')}
       <div class="barra-guardar">
         <span id="estado-guardado">${ICO.ok} Todo guardado</span>
-        <a class="btn btn-borde" href="index.html" target="_blank" rel="noopener">${ICO.ojo} Ver mi página</a>
+        <a class="btn btn-borde" href="./" target="_blank" rel="noopener">${ICO.ojo} Ver mi página</a>
         <button class="btn btn-grande" type="submit">Guardar cambios</button>
       </div>
     </form>`);

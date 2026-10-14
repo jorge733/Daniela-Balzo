@@ -53,7 +53,13 @@ http.createServer(async (req, res) => {
   const ruta = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (ruta.startsWith('/api/')) return api(req, res, ruta.slice(5));
 
-  const archivo = path.join(RAIZ, ruta.endsWith('/') ? ruta + 'index.html' : ruta);
+  // Direcciones sin .html, como en Vercel (cleanUrls)
+  if (ruta.endsWith('.html')) {
+    const limpia = ruta === '/index.html' ? '/' : ruta.slice(0, -5);
+    res.writeHead(308, { Location: limpia + new URL(req.url, 'http://x').search });
+    return res.end();
+  }
+  const archivo = path.join(RAIZ, ruta.endsWith('/') ? ruta + 'index.html' : path.extname(ruta) ? ruta : ruta + '.html');
   if (!archivo.startsWith(RAIZ) || /[\\/](scripts|node_modules|api)[\\/]|[\\/]\./.test(archivo.slice(RAIZ.length))) {
     return enviar(res, 404, 'No encontrado');
   }
