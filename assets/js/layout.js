@@ -28,7 +28,7 @@
             <button class="menu-cerrar" type="button" aria-label="Cerrar menú">×</button>
           </div>
           ${enlace('index.html', 'Inicio', 'inicio')}
-          <details><summary>Quién soy</summary><div>
+          <details data-ir="quien-soy.html"><summary>Quién soy</summary><div>
             ${enlace('quien-soy.html', 'Quién soy', 'quien-soy')}
             ${enlace('talleres.html', 'Talleres realizados', 'talleres')}
           </div></details>
