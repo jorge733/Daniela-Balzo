@@ -2,7 +2,7 @@
    Los cursos, cuentas, compras y textos editables viven en Firebase (ver nube.js). */
 
 const NM = (() => {
-  // Mientras sea true, el sitio muestra el aviso de versión de prueba.
+  // Mientras sea true, el sitio muestra el aviso de sitio en construcción.
   const MODO_PRUEBA = true;
 
   const CONTACTO = {

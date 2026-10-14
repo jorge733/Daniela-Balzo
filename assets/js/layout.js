@@ -90,7 +90,7 @@
         </div>
       </div>
       <div class="legal">
-        <span>© ${new Date().getFullYear()} Daniela Balzo · Negra Mora Diseños · ${NM.MODO_PRUEBA ? '<span class="sello-prototipo">Versión de prueba</span> ' : ''}Desarrollado por <a href="https://benedettowebs.vercel.app" target="_blank" rel="noopener">BenedettoWebs</a></span>
+        <span>© ${new Date().getFullYear()} Daniela Balzo · Negra Mora Diseños · ${NM.MODO_PRUEBA ? '<span class="sello-prototipo">Sitio en construcción</span> ' : ''}Desarrollado por <a href="https://benedettowebs.vercel.app" target="_blank" rel="noopener">BenedettoWebs</a></span>
         <span class="legal-links"><a href="terminos">Términos y condiciones</a> · <a href="privacidad">Privacidad</a> · <a href="panel">Panel</a></span>
       </div>
     </div>
@@ -103,7 +103,7 @@
   try { ocultarBanner = sessionStorage.getItem('nm_banner') === 'no'; } catch (e) {}
   const banner = ocultarBanner || !NM.MODO_PRUEBA ? '' : `
   <div class="banner-prototipo" role="note">
-    <b>Versión de prueba</b> Este es el nuevo sitio de Daniela Balzo en construcción. Los pagos son de prueba y no se cobra nada.
+    <b>Sitio en construcción</b> Estamos terminando el nuevo sitio de Daniela Balzo, así que algunas secciones pueden cambiar. Los pagos son de prueba y no se cobra nada.
     <button type="button" aria-label="Ocultar aviso">×</button>
   </div>`;
 
