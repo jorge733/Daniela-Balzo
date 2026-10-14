@@ -103,7 +103,7 @@
   try { ocultarBanner = sessionStorage.getItem('nm_banner') === 'no'; } catch (e) {}
   const banner = ocultarBanner || !NM.MODO_PRUEBA ? '' : `
   <div class="banner-prototipo" role="note">
-    <b>Sitio en construcción</b> Estamos terminando el nuevo sitio de Daniela Balzo, así que algunas secciones pueden cambiar. Los pagos son de prueba y no se cobra nada.
+    <b>Sitio en construcción</b> Estamos terminando el nuevo sitio de Daniela Balzo, así que algunas secciones pueden cambiar.
     <button type="button" aria-label="Ocultar aviso">×</button>
   </div>`;
 
