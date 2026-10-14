@@ -183,10 +183,7 @@ a:hover > .flecha::after, .flecha:hover::after { transform: translateX(3px); }
 @media (max-width: 760px) { .dos { grid-template-columns: 1fr; gap: 28px; } }
 
 /* Foto con marco de hilo */
-.foto-marco { position: relative; }
-.foto-marco img { position: relative; border-radius: var(--radio); width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
-.foto-marco::before { content: ""; position: absolute; inset: 18px -18px -18px 18px; border: 2px solid var(--rosa-fuerte); border-radius: var(--radio); }
-@media (max-width: 760px) { .foto-marco::before { inset: 10px -10px -10px 10px; } .foto-marco { margin-right: 10px; } }
+.foto-marco img { border-radius: var(--radio); width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
 
 /* Tarjetas */
 .tarjetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 28px; padding: 0; margin: 0; list-style: none; }
