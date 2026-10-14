@@ -342,7 +342,7 @@ function pintarEditor(c) {
 
       <section class="paso">
         <h3><span class="num">4</span> Materiales para descargar</h3>
-        <p class="ayuda-chica">Moldes, patrones o listas en PDF. Las alumnas los descargan desde su aula. Es opcional.</p>
+        <p class="ayuda-chica">Moldes, patrones o listas en PDF. Las alumnas los descargan desde Mis cursos. Es opcional.</p>
         ${c.materiales.length ? `<ul class="materiales">${c.materiales.map((m, k) => `<li>${ICO.pdf}<span>${esc(m.nombre)}</span>
           <button type="button" class="icono peligro" data-quitar-material="${k}" aria-label="Quitar ${esc(m.nombre)}">${ICO.basura}</button></li>`).join('')}</ul>` : ''}
         <label class="btn btn-borde subir-archivo">${ICO.subir} Subir un material<input type="file" accept=".pdf,image/*" id="subir-material" hidden></label>

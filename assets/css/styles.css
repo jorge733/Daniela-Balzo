@@ -248,6 +248,19 @@ a.tarjeta, .tarjeta a.cubre { text-decoration: none; color: inherit; }
 .grupo-taller h3 { font-size: 1.3rem; position: sticky; top: 96px; }
 .grupo-taller h3 small { display: block; font: 700 .74rem var(--f-texto); letter-spacing: .14em; text-transform: uppercase; color: var(--rosa-fuerte); margin-bottom: 8px; }
 .grupo-taller .galeria { columns: 3 180px; }
+/* La Reina: la 4.ª foto va bajo la 2.ª (horizontal), sin mover el orden 1, 2, 3 */
+@media (min-width: 561px) {
+  .grupo-taller .galeria-reina { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; align-items: start; }
+  .galeria-reina button { margin: 0; }
+  .galeria-reina button:nth-child(1) { grid-column: 1; grid-row: 1 / span 2; }
+  .galeria-reina button:nth-child(2) { grid-column: 2; grid-row: 1; }
+  .galeria-reina button:nth-child(3) { grid-column: 3; grid-row: 1 / span 2; }
+  .galeria-reina button:nth-child(4) { grid-column: 2; grid-row: 2; }
+  /* Las fotos 1 y 3 se estiran al alto de la columna del medio, para que no quede espacio en blanco */
+  .galeria-reina button:nth-child(1), .galeria-reina button:nth-child(3) { align-self: stretch; }
+  .galeria-reina button:nth-child(1) img, .galeria-reina button:nth-child(3) img { height: 100%; object-fit: cover; }
+  .galeria-reina button:nth-child(4) img { aspect-ratio: 4 / 3; object-fit: cover; object-position: 50% 30%; }
+}
 @media (max-width: 760px) { .grupo-taller { grid-template-columns: 1fr; gap: 14px; } .grupo-taller h3 { position: static; } }
 @media (max-width: 560px) { .galeria, .grupo-taller .galeria { columns: 2; column-gap: 8px; } .galeria button { margin-bottom: 8px; } }
 

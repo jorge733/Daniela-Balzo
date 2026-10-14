@@ -45,7 +45,7 @@
             ${enlace('arte-terapia.html', 'Arte terapia', 'arte-terapia')}
           </div></details>
           ${enlace('contacto.html', 'Contacto', 'contacto')}
-          ${enlace('aula.html', 'Mi aula', 'aula')}
+          ${enlace('aula.html', 'Mis cursos', 'aula')}
           ${enlace('cursos-online.html', 'Cursos online', 'cursos-online', ' class="destacado"')}
           <div class="menu-pie">
             <a class="btn btn-rosa" href="https://wa.me/${CONTACTO.whatsapp}" target="_blank" rel="noopener">Escribir por WhatsApp</a>
@@ -72,7 +72,7 @@
             <li><a href="cursos-online.html">Cursos online</a></li>
             <li><a href="vestuario.html">Portafolio</a></li>
             <li><a href="talleres.html">Talleres realizados</a></li>
-            <li><a href="aula.html">Mi aula</a></li>
+            <li><a href="aula.html">Mis cursos</a></li>
           </ul>
         </div>
         <div>

@@ -27,7 +27,7 @@ if (!curso || !curso.publicado) {
           <div class="pie-tarjeta" style="justify-content: flex-start; gap: 20px">
             <span class="precio" style="font-size: 2rem">${tiene ? 'Ya es tuyo' : clp(curso.precio)}</span>
             ${tiene
-              ? `<a class="btn" href="aula.html?curso=${encodeURIComponent(curso.id)}">Ir a mi aula</a>`
+              ? `<a class="btn" href="aula.html?curso=${encodeURIComponent(curso.id)}">Ir a mis cursos</a>`
               : `<button class="btn" id="comprar" type="button">Comprar curso</button>`}
           </div>
           <p class="nota" style="margin-top: 12px">Pago único. Acceso a los videos y materiales cuando quieras.</p>

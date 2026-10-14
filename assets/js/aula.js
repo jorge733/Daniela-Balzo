@@ -21,7 +21,7 @@ function login() {
   main.innerHTML = `
   <section class="banda banda-lila">
     <div class="wrap" style="max-width: 460px">
-      <h1>Mi aula</h1>
+      <h1>Mis cursos</h1>
       <p>Entra con el correo y la contraseña que usaste al comprar tu curso.</p>
       <form class="form" id="f-login">
         <label>Correo<input id="l-correo" type="email" autocomplete="email" required></label>
