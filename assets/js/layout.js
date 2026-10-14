@@ -7,16 +7,18 @@
   const enlace = (href, texto, clave, extra = '') =>
     `<a href="${href}"${clave === pagina ? ' aria-current="page"' : ''}${extra}>${texto}</a>`;
 
+  const instagram = `<a class="marca-ig" href="https://instagram.com/${esc(CONTACTO.instagram)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>@${esc(CONTACTO.instagram)}</a>`;
+
   const marca = `
     <a class="marca-mini" href="index.html">
-      <img src="assets/img/logo-01.jpg" alt="">
+      <img src="assets/img/logo-icono.jpg" alt="">
       <span><strong data-texto="nombre">${esc(t.nombre)}</strong><small>Negra Mora · Clases de costura</small></span>
     </a>`;
 
   const barra = `
   <header class="topbar">
     <div class="wrap">
-      ${marca}
+      <div class="marca-bloque">${marca}${instagram}</div>
       <nav class="menu" aria-label="Menú principal">
         <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-items" aria-label="Abrir menú">
           <span class="hamb" aria-hidden="true"><i></i><i></i><i></i></span>
@@ -34,11 +36,13 @@
           </div></details>
           <details data-ir="cursos.html"><summary>Cursos</summary><div>
             ${enlace('cursos.html', 'Todos los cursos', 'cursos')}
+            ${enlace('cursos-online.html', 'Cursos online', 'cursos-online')}
             ${enlace('clases-grupales.html', 'Clases personalizadas grupales', 'clases-grupales')}
             ${enlace('clases-domicilio.html', 'Clases a domicilio', 'clases-domicilio')}
             ${enlace('clases-online.html', 'Clases online en vivo', 'clases-online')}
           </div></details>
-          <details><summary>Portafolio</summary><div>
+          ${enlace('patrones.html', 'Patrones', 'patrones')}
+          <details data-ir="vestuario.html"><summary>Portafolio</summary><div>
             ${enlace('vestuario.html', 'Vestuario', 'vestuario')}
             ${enlace('accesorios.html', 'Accesorios', 'accesorios')}
             ${enlace('ilustracion-textil.html', 'Ilustración textil', 'ilustracion-textil')}
@@ -46,7 +50,6 @@
           </div></details>
           ${enlace('contacto.html', 'Contacto', 'contacto')}
           ${enlace('aula.html', 'Mis cursos', 'aula')}
-          ${enlace('cursos-online.html', 'Cursos online', 'cursos-online', ' class="destacado"')}
           <div class="menu-pie">
             <a class="btn btn-rosa" href="https://wa.me/${CONTACTO.whatsapp}" target="_blank" rel="noopener">Escribir por WhatsApp</a>
             <p><a href="mailto:${esc(CONTACTO.correo)}">${esc(CONTACTO.correo)}</a><br>
@@ -70,6 +73,7 @@
           <ul>
             <li><a href="cursos.html">Cursos presenciales</a></li>
             <li><a href="cursos-online.html">Cursos online</a></li>
+            <li><a href="patrones.html">Patrones</a></li>
             <li><a href="vestuario.html">Portafolio</a></li>
             <li><a href="talleres.html">Talleres realizados</a></li>
             <li><a href="aula.html">Mis cursos</a></li>
@@ -186,7 +190,7 @@
       cerrar = setTimeout(() => { d.open = false; }, 250);
     });
     // Ya abierto por el mouse, un clic en el título no lo cierra; si la sección tiene página propia
-    // (Cursos), el clic lleva a ella
+    // (Quién soy, Cursos, Portafolio), el clic lleva a ella
     d.querySelector('summary').addEventListener('click', (e) => {
       if (!conMouse.matches || e.detail === 0) return; // con teclado (detail 0) sí se abre y cierra
       if (d.dataset.ir) { e.preventDefault(); location.href = d.dataset.ir; return; }

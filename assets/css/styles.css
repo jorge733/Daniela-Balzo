@@ -57,6 +57,11 @@ li::marker { color: var(--rosa-fuerte); }
 .marca-mini { display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; flex: none; }
 .marca-mini img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid var(--rosa); }
 .marca-mini strong { display: block; font-weight: 700; letter-spacing: .16em; font-size: 1.05rem; line-height: 1.2; }
+.marca-bloque { flex: none; display: flex; flex-direction: column; gap: 2px; padding: 8px 0; }
+/* Enlace a Instagram bajo el nombre, alineado con el texto (48px del logo + 12px de espacio) */
+.marca-ig { display: inline-flex; align-items: center; gap: 6px; margin-left: 60px; color: var(--rosa); font-size: .82rem; font-weight: 600; text-decoration: none; width: max-content; }
+.marca-ig:hover { color: #fff; text-decoration: underline; }
+.marca-ig svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; }
 .marca-mini small { display: block; font-family: var(--f-titulo); font-stretch: 75%; font-size: .9rem; opacity: .8; letter-spacing: .02em; }
 
 .menu .items { display: flex; align-items: center; gap: 2px; }
@@ -177,7 +182,7 @@ a:hover > .flecha::after, .flecha:hover::after { transform: translateX(3px); }
 .cabeza .etiqueta, .portada .etiqueta, .banda-morada .etiqueta { color: var(--rosa); }
 
 /* Columnas */
-.dos { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 5vw, 64px); align-items: center; }
+.dos { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 5vw, 64px); align-items: start; }
 .dos > * { min-width: 0; }
 .dos .foto { border-radius: var(--radio); box-shadow: var(--sombra); width: 100%; object-fit: cover; }
 @media (max-width: 760px) { .dos { grid-template-columns: 1fr; gap: 28px; } }
@@ -221,8 +226,8 @@ a.tarjeta, .tarjeta a.cubre { text-decoration: none; color: inherit; }
 .fotos-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 28px; }
 .fotos-3 img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 4px; }
 .fotos-3.fotos-arriba { margin: 0 0 28px; }
-.destacado-texto { font-size: 1.15rem; line-height: 1.55; color: var(--morado-2); border-left: 4px solid var(--rosa-fuerte); padding-left: 16px; }
-.lista-check strong, .destacado-texto + p strong { color: var(--morado-2); }
+.destacado-texto { font-size: 1.15rem; line-height: 1.55; color: var(--tinta); border-left: 4px solid var(--rosa-fuerte); padding-left: 16px; }
+.lista-check strong, .destacado-texto strong, .destacado-texto + p strong { color: var(--tinta); }
 .lista-check { list-style: none; padding: 0; }
 .lista-check li { position: relative; padding-left: 28px; margin: 10px 0; }
 .lista-check li::before { content: ""; position: absolute; left: 2px; top: 8px; width: 12px; height: 6px; border-left: 2px solid var(--rosa-fuerte); border-bottom: 2px solid var(--rosa-fuerte); transform: rotate(-45deg); }
