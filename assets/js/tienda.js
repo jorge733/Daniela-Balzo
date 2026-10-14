@@ -70,6 +70,8 @@ if (!curso || !curso.publicado) {
     $('m-curso').textContent = curso.titulo;
     $('m-precio').textContent = clp(curso.precio);
     $('campos-cuenta').hidden = !!u;
+    // Con sesión iniciada los campos quedan ocultos: si siguen obligatorios, el navegador bloquea el envío.
+    $('m-correo').required = $('m-clave').required = !u;
     $('m-ya-cuenta').textContent = u ? `Comprarás con tu cuenta ${u.email}.` : '';
     $('m-error').textContent = '';
     cambiarModo(false);
