@@ -233,7 +233,7 @@ async function cursos() {
       <h2 class="panel-titulo">Mis cursos online</h2>
       <button class="btn" type="button" id="nuevo">${ICO.mas} Crear curso nuevo</button>
     </div>
-    <p class="ayuda">${ICO.ayuda}<span>Haz clic en un curso para cambiarlo o subirle videos. Solo los cursos marcados como <b>"En tu página"</b> los pueden ver y comprar tus alumnas.</span></p>
+    <p class="ayuda">${ICO.ayuda}<span>Haz clic en un curso para cambiarlo o subirle videos. Solo los cursos marcados como <b>"En tu página"</b> los pueden ver y comprar tus estudiantes.</span></p>
     ${lista.length ? `<div class="lista-cursos">${lista.map(c => {
       const con = c.lecciones.filter(l => l.video).length;
       return `<a class="curso-fila" href="#curso/${encodeURIComponent(c.id)}">
@@ -297,8 +297,8 @@ function pintarEditor(c) {
           <small>En pesos chilenos. Mercado Pago descuenta su comisión de cada venta.</small></label>
         <label>Descripción
           <textarea name="resumen" rows="4" maxlength="600" placeholder="Ej: En 4 clases aprenderás a usar tu máquina y harás 3 proyectos simples.">${esc(c.resumen)}</textarea>
-          <small>2 o 3 líneas: qué aprende la alumna y qué va a hacer.</small></label>
-        <label>¿Qué necesita la alumna?
+          <small>2 o 3 líneas: qué se aprende y qué se va a hacer.</small></label>
+        <label>¿Qué se necesita para el curso?
           <input name="requisitos" value="${esc(c.requisitos)}" maxlength="300" placeholder="Ej: una máquina de coser recta, tijeras y alfileres.">
           <small>Opcional. Si lo dejas vacío, dice "una máquina de coser y materiales básicos".</small></label>
       </section>
@@ -342,7 +342,7 @@ function pintarEditor(c) {
 
       <section class="paso">
         <h3><span class="num">4</span> Materiales para descargar</h3>
-        <p class="ayuda-chica">Moldes, patrones o listas en PDF. Las alumnas los descargan desde Mis cursos. Es opcional.</p>
+        <p class="ayuda-chica">Moldes, patrones o listas en PDF. Tus estudiantes los descargan desde Mis cursos. Es opcional.</p>
         ${c.materiales.length ? `<ul class="materiales">${c.materiales.map((m, k) => `<li>${ICO.pdf}<span>${esc(m.nombre)}</span>
           <button type="button" class="icono peligro" data-quitar-material="${k}" aria-label="Quitar ${esc(m.nombre)}">${ICO.basura}</button></li>`).join('')}</ul>` : ''}
         <label class="btn btn-borde subir-archivo">${ICO.subir} Subir un material<input type="file" accept=".pdf,image/*" id="subir-material" hidden></label>
@@ -356,7 +356,7 @@ function pintarEditor(c) {
           <span class="pista" aria-hidden="true"></span>
           <span><b>Mostrar este curso en mi página</b><br><small>Si está apagado, el curso queda oculto: nadie lo ve ni lo puede comprar.</small></span>
         </label>
-        <p class="aviso-publicar" id="aviso-publicar" hidden>${ICO.alerta}<span>Ojo: hay clases sin video. Tus alumnas verán "Daniela todavía no sube este video" en esas clases.</span></p>
+        <p class="aviso-publicar" id="aviso-publicar" hidden>${ICO.alerta}<span>Ojo: hay clases sin video. Tus estudiantes verán "Daniela todavía no sube este video" en esas clases.</span></p>
       </section>
 
       <section class="paso paso-peligro">
@@ -491,7 +491,7 @@ function pintarEditor(c) {
       await confirmar({ titulo: 'Ese video no sirve', texto: 'Ese formato no se ve en todos los celulares. Sube el video en <b>MP4</b>, que es como lo graba el celular.', si: 'Entendido', soloAceptar: true });
       return;
     }
-    // Aviso si el video es muy pesado: cada vez que una alumna lo ve se gasta de la parte gratis.
+    // Aviso si el video es muy pesado: cada vez que alguien lo ve se gasta de la parte gratis.
     const segundos = await segundosVideo(archivo);
     const porMinuto = segundos ? archivo.size / 1e6 / (segundos / 60) : 0;
     if (segundos ? porMinuto > MB_POR_MINUTO_MAX : archivo.size / 1e6 > MB_SIN_DURACION_MAX) {
@@ -560,7 +560,7 @@ function pintarEditor(c) {
   f.querySelectorAll('[data-quitar-material]').forEach(b => b.onclick = async () => {
     const k = Number(b.dataset.quitarMaterial);
     const m = c.materiales[k];
-    if (!await confirmar({ titulo: '¿Quitar este material?', texto: `Vas a quitar <b>"${esc(m.nombre)}"</b>. Tus alumnas ya no podrán descargarlo.`, si: 'Sí, quitarlo', no: 'No', peligro: true })) return;
+    if (!await confirmar({ titulo: '¿Quitar este material?', texto: `Vas a quitar <b>"${esc(m.nombre)}"</b>. Tus estudiantes ya no podrán descargarlo.`, si: 'Sí, quitarlo', no: 'No', peligro: true })) return;
     leer();
     c.materiales.splice(k, 1);
     if (await guardar('Material quitado')) { nube.borrarArchivo(m.ruta); pintarEditor(c); }
@@ -569,7 +569,7 @@ function pintarEditor(c) {
   // Eliminar curso
   document.getElementById('borrar-curso').onclick = async () => {
     if (await nube.tieneVentas(c.id)) {
-      await confirmar({ titulo: 'Este curso ya tiene alumnas', texto: 'Como ya lo compraron, no se puede eliminar: perderían su acceso. Si no quieres venderlo más, apaga "Mostrar este curso en mi página" (paso 5).', si: 'Entendido', soloAceptar: true });
+      await confirmar({ titulo: 'Este curso ya tiene estudiantes', texto: 'Como ya lo compraron, no se puede eliminar: perderían su acceso. Si no quieres venderlo más, apaga "Mostrar este curso en mi página" (paso 5).', si: 'Entendido', soloAceptar: true });
       return;
     }
     const ok = await confirmar({ titulo: '¿Eliminar este curso?', texto: `Se borrará <b>"${esc(c.titulo)}"</b> para siempre, con sus clases. Esto no se puede deshacer.`, si: 'Sí, eliminar para siempre', no: 'No, conservarlo', peligro: true });
@@ -651,11 +651,11 @@ async function ventas() {
     <div class="resumen-panel">
       <div><span>Este mes</span><b>${clp(suma(delMes))}</b><small>${delMes.length} venta${delMes.length === 1 ? '' : 's'}</small></div>
       <div><span>Desde el comienzo</span><b>${clp(suma(v))}</b><small>${v.length} venta${v.length === 1 ? '' : 's'}</small></div>
-      <div><span>Alumnas registradas</span><b>${alumnas}</b><small>personas con cuenta</small></div>
+      <div><span>Estudiantes</span><b>${alumnas}</b><small>personas con cuenta</small></div>
     </div>
     <p class="ayuda">${ICO.ayuda}<span>El dinero llega a tu cuenta de Mercado Pago. Ahí mismo ves cuánto descontó de comisión.</span></p>
     ${v.length ? `<ul class="ventas">${v.map(x => `<li>
-        <div><b>${esc(x.nombre || 'Alumna')}</b><span>${esc(x.correo)}</span></div>
+        <div><b>${esc(x.nombre || 'Estudiante')}</b><span>${esc(x.correo)}</span></div>
         <div><span>${esc(x.titulo)}</span><span>${fecha(x)}</span></div>
         <b class="monto">${clp(x.monto)}</b>
       </li>`).join('')}</ul>` : '<div class="vacio"><p>Todavía no tienes ventas. Cuando alguien compre un curso, aparecerá aquí.</p></div>'}`);

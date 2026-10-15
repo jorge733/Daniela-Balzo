@@ -102,9 +102,9 @@ export async function guardarCurso({ id, ...datos }) {
 }
 export const borrarCurso = (id) => deleteDoc(doc(db, 'cursos', id));
 
-// ---------- Alumna: accesos y avance ----------
+// ---------- Estudiante: accesos y avance ----------
 
-/** Ids de los cursos que compró la alumna. */
+/** Ids de los cursos que compró quien inició sesión. */
 export async function misCursos(u = auth.currentUser) {
   if (!u) return [];
   try {
@@ -120,7 +120,7 @@ export async function progreso(u = auth.currentUser) {
 export const guardarAvance = (cursoId, hechas, u = auth.currentUser) =>
   setDoc(doc(db, 'progreso', u.uid), { [cursoId]: hechas }, { merge: true });
 
-// ---------- Panel: ventas y alumnas ----------
+// ---------- Panel: ventas y estudiantes ----------
 
 export async function ventas(max = 200) {
   const r = await getDocs(query(collection(db, 'ventas'), orderBy('fecha', 'desc'), limit(max)));

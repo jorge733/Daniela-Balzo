@@ -1,5 +1,5 @@
 /* POST /api/archivo { curso, ruta } -> { url }
-   Enlace temporal a un video o material, solo si la alumna compró el curso. */
+   Enlace temporal a un video o material, solo si quien lo pide compró el curso. */
 import { db, bucket, usuarioDe, EMULADOR } from './_lib/firebase.js';
 import { json, error, cuerpo } from './_lib/util.js';
 

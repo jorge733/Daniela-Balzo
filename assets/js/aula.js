@@ -65,7 +65,7 @@ function misCarpetas(u, cursos, prog, aviso = '') {
   <section class="banda">
     <div class="wrap">
       <div class="pie-tarjeta" style="margin-bottom: 28px; padding: 0">
-        <div><h1 style="margin: 0">Hola, ${esc((u.displayName || '').split(' ')[0] || 'bienvenida')}</h1><p class="nota" style="margin: 0">${esc(u.email)}</p></div>
+        <div><h1 style="margin: 0">Hola${(u.displayName || '').trim() ? ', ' + esc(u.displayName.trim().split(' ')[0]) : ''}</h1><p class="nota" style="margin: 0">${esc(u.email)}</p></div>
         <button class="btn btn-borde btn-chico" id="salir" type="button">Cerrar sesión</button>
       </div>
       ${aviso}
