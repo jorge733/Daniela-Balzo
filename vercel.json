@@ -1,3 +1,8 @@
 {
-  "cleanUrls": true
+  "cleanUrls": true,
+  "functions": {
+    "api/crear-pago.js": {
+      "includeFiles": "assets/js/datos.js"
+    }
+  }
 }

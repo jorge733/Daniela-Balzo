@@ -18,31 +18,34 @@ async function mp(ruta, opciones = {}) {
   return datos;
 }
 
-// La referencia viaja en el pago y vuelve en la confirmación: "uid|cursoId|precio".
+// La referencia viaja en el pago y vuelve en la confirmación:
+//   curso online:      "uid|cursoId|precio"
+//   clase presencial:  "insc|inscripcionId|precio"  (los datos de quien paga están en inscripciones/<id>)
 export const referencia = (uid, cursoId, precio) => [uid, cursoId, precio].join('|');
-function leerReferencia(ref) {
-  const [uid, curso, precio] = String(ref || '').split('|');
-  return uid && curso && precio ? { uid, curso, precio: Number(precio) } : null;
+export function leerReferencia(ref) {
+  const [a, b, precio] = String(ref || '').split('|');
+  if (!a || !b || !precio) return null;
+  return a === 'insc' ? { inscripcion: b, precio: Number(precio) } : { uid: a, curso: b, precio: Number(precio) };
 }
 
-/** Crea la preferencia de pago y devuelve la URL del checkout. */
-export async function crearPreferencia({ curso, usuario, base }) {
-  const ref = referencia(usuario.uid, curso.id, curso.precio);
+/** Crea la preferencia de pago y devuelve la URL del checkout (curso online o clase presencial). */
+export async function crearPreferencia({ curso, usuario, clase, inscripcion, nombre, correo, base }) {
+  const item = curso || clase;
+  const ref = curso ? referencia(usuario.uid, curso.id, curso.precio) : ['insc', inscripcion, clase.precio].join('|');
   if (SIMULADO) {
     return `${base}/api/simular-pago?ref=${encodeURIComponent(ref)}`;
   }
+  const volver = curso
+    ? { ok: `${base}/aula?pago=ok&curso=${encodeURIComponent(curso.id)}`, error: `${base}/curso?id=${encodeURIComponent(curso.id)}&pago=error` }
+    : { ok: `${base}/inscripcion?id=${encodeURIComponent(inscripcion)}`, error: `${base}/${clase.pagina || 'clase?id=' + encodeURIComponent(clase.id)}${clase.pagina ? '?' : '&'}pago=error` };
   const p = await mp('/checkout/preferences', {
     method: 'POST',
     headers: { 'X-Idempotency-Key': crypto.randomUUID() },
     body: JSON.stringify({
-      items: [{ id: curso.id, title: curso.titulo, quantity: 1, unit_price: curso.precio, currency_id: 'CLP' }],
-      payer: { email: usuario.email },
+      items: [{ id: item.id, title: item.titulo, quantity: 1, unit_price: item.precio, currency_id: 'CLP' }],
+      payer: curso ? { email: usuario.email } : { name: nombre, email: correo },
       external_reference: ref,
-      back_urls: {
-        success: `${base}/aula?pago=ok&curso=${encodeURIComponent(curso.id)}`,
-        pending: `${base}/aula?pago=ok&curso=${encodeURIComponent(curso.id)}`,
-        failure: `${base}/curso?id=${encodeURIComponent(curso.id)}&pago=error`
-      },
+      back_urls: { success: volver.ok, pending: volver.ok, failure: volver.error },
       auto_return: 'approved',
       notification_url: `${base}/api/webhook-mp`,
       statement_descriptor: 'NEGRA MORA'
@@ -62,7 +65,8 @@ export async function obtenerPago(id) {
 }
 
 /**
- * Revisa el pago y, si está aprobado, da acceso al curso y registra la venta.
+ * Revisa el pago y, si está aprobado, registra la venta: da acceso al curso online
+ * o marca pagada la inscripción a la clase presencial.
  * Se puede llamar varias veces con el mismo pago: solo lo registra una vez.
  */
 export async function registrarPago(pago) {
@@ -72,6 +76,7 @@ export async function registrarPago(pago) {
   if (pago.currency_id !== 'CLP' || Number(pago.transaction_amount) < ref.precio) {
     throw new Error(`Monto o moneda no coinciden en el pago ${pago.id}`);
   }
+  if (ref.inscripcion) return registrarInscripcion(pago, ref);
 
   const cursoDoc = await db.collection('cursos').doc(ref.curso).get();
   const usuario = await auth.getUser(ref.uid).catch(() => null);
@@ -94,6 +99,34 @@ export async function registrarPago(pago) {
     tx.set(accesoRef, { cursos: { [ref.curso]: true } }, { merge: true });
   });
   return { estado: 'approved', curso: ref.curso, uid: ref.uid };
+}
+
+async function registrarInscripcion(pago, ref) {
+  const inscRef = db.collection('inscripciones').doc(ref.inscripcion);
+  const ventaRef = db.collection('ventas').doc(String(pago.id));
+  let insc;
+  await db.runTransaction(async (tx) => {
+    const d = await tx.get(inscRef);
+    if (!d.exists) throw new Error('Inscripción no encontrada: ' + ref.inscripcion);
+    insc = d.data();
+    if ((await tx.get(ventaRef)).exists) return;
+    tx.set(ventaRef, {
+      tipo: 'presencial',
+      fecha: FieldValue.serverTimestamp(),
+      inscripcion: ref.inscripcion,
+      nombre: insc.nombre,
+      correo: insc.correo || pago.payer?.email || '',
+      telefono: insc.telefono || '',
+      nota: insc.nota || '',
+      curso: insc.clase,
+      titulo: insc.titulo,
+      monto: Number(pago.transaction_amount),
+      neto: Number(pago.transaction_details?.net_received_amount ?? pago.transaction_amount),
+      medio: pago.payment_method_id || ''
+    });
+    tx.update(inscRef, { estado: 'pagada', pago: String(pago.id), pagada: FieldValue.serverTimestamp() });
+  });
+  return { estado: 'approved', clase: insc.clase, titulo: insc.titulo, nombre: insc.nombre };
 }
 
 /**

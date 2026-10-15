@@ -37,9 +37,6 @@
           <details data-ir="cursos"><summary>Cursos</summary><div>
             ${enlace('cursos', 'Todos los cursos', 'cursos')}
             ${enlace('cursos-online', 'Cursos online', 'cursos-online')}
-            ${enlace('clases-grupales', 'Clases personalizadas grupales', 'clases-grupales')}
-            ${enlace('clases-domicilio', 'Clases a domicilio', 'clases-domicilio')}
-            ${enlace('clases-online', 'Clases online en vivo', 'clases-online')}
           </div></details>
           ${enlace('patrones', 'Patrones', 'patrones')}
           <details data-ir="vestuario"><summary>Portafolio</summary><div>

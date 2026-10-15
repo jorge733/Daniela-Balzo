@@ -48,6 +48,12 @@ service cloud.firestore {
       allow write: if esYo(uid) && request.resource.data.size() <= 200;
     }
 
+    // Inscripciones a clases presenciales (las crea y las marca pagadas el servidor)
+    match /inscripciones/{id} {
+      allow read: if esAdmin();
+      allow write: if false;
+    }
+
     match /ventas/{pagoId} {
       allow read: if esAdmin();
       allow write: if false;

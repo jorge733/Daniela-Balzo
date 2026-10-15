@@ -11,8 +11,10 @@ const GALERIAS = {
   const ruta = (f) => 'assets/img/' + f + '.jpg';
 
   // Uso: <div class="galeria" data-galeria="talleres" data-desde="1" data-hasta="5" data-titulo="..."></div>
+  // Las galerías que ya traen sus fotos (talleres, ver contenido.js) se dejan tal cual.
   document.querySelectorAll('[data-galeria]').forEach(el => {
-    const fotos = GALERIAS[el.dataset.galeria] || [];
+    const fotos = GALERIAS[el.dataset.galeria];
+    if (!fotos) return;
     const desde = Number(el.dataset.desde || 1) - 1;
     const hasta = Number(el.dataset.hasta || fotos.length);
     const titulo = el.dataset.titulo || 'Foto';

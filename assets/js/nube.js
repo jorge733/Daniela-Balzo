@@ -74,6 +74,13 @@ export async function textos() {
 }
 export const guardarTextos = (t) => setDoc(doc(db, 'sitio', 'textos'), t, { merge: true });
 
+/** Clases presenciales o talleres guardados desde el panel (null si nunca se guardaron). */
+export async function contenido(nombre) {
+  const d = await getDoc(doc(db, 'sitio', nombre));
+  return d.exists() ? d.data().lista || null : null;
+}
+export const guardarContenido = (nombre, lista) => setDoc(doc(db, 'sitio', nombre), { lista, actualizado: serverTimestamp() });
+
 // ---------- Cursos ----------
 
 const conId = (d) => ({ id: d.id, lecciones: [], materiales: [], ...d.data() });

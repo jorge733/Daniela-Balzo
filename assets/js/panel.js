@@ -1,6 +1,7 @@
 /* Panel privado de Daniela.
    Pensado para usarse sin conocimientos técnicos: una cosa a la vez, palabras simples,
-   botones grandes y confirmación antes de borrar.  Secciones: #inicio, #cursos, #curso/<id>, #textos, #ventas */
+   botones grandes y confirmación antes de borrar.
+   Secciones: #inicio, #cursos, #curso/<id>, #presenciales, #presencial/<id>, #talleres, #textos, #ventas */
 import * as nube from './nube.js';
 
 const { esc, clp } = NM;
@@ -16,6 +17,8 @@ const ICO = {
   inicio: svg('<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/>'),
   cursos: svg('<rect x="3" y="5" width="14" height="14" rx="2"/><path d="m17 10 4-2.5v9L17 14"/>'),
   textos: svg('<path d="M4 6h16M4 12h10M4 18h13"/>'),
+  presencial: svg('<path d="M6 3v8a6 6 0 0 0 12 0V3"/><path d="M4 21h16"/><circle cx="12" cy="11" r="2"/>'),
+  talleres: svg('<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M14.5 14.3A5 5 0 0 1 21 19"/>'),
   ventas: svg('<rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10v.01M18 15v.01"/>'),
   mas: svg('<path d="M12 5v14M5 12h14"/>'),
   ok: svg('<path d="m5 12 5 5 9-10"/>'),
@@ -108,7 +111,9 @@ const soloDigitos = (s) => Number(String(s).replace(/\D/g, '')) || 0;
 // ---------- Estructura ----------
 const SECCIONES = [
   ['inicio', 'Inicio', ICO.inicio],
-  ['cursos', 'Mis cursos', ICO.cursos],
+  ['cursos', 'Cursos online', ICO.cursos],
+  ['presenciales', 'Clases presenciales', ICO.presencial],
+  ['talleres', 'Talleres realizados', ICO.talleres],
   ['textos', 'Textos de mi página', ICO.textos],
   ['ventas', 'Mis ventas', ICO.ventas]
 ];
@@ -216,6 +221,8 @@ async function inicio() {
     <div class="acciones">
       <button class="accion" type="button" id="accion-nuevo">${ICO.mas}<b>Crear un curso nuevo</b><span>Ponle nombre, precio y sube sus videos.</span></button>
       <a class="accion" href="#cursos">${ICO.cursos}<b>Ver o cambiar mis cursos</b><span>Subir videos, cambiar precios o fotos.</span></a>
+      <a class="accion" href="#presenciales">${ICO.presencial}<b>Cambiar mis clases presenciales</b><span>Precios, horarios, textos y fotos.</span></a>
+      <a class="accion" href="#talleres">${ICO.talleres}<b>Cambiar mis talleres realizados</b><span>Agregar un taller, sus textos y sus fotos.</span></a>
       <a class="accion" href="#textos">${ICO.textos}<b>Cambiar textos de mi página</b><span>Tu nombre, tu descripción y los títulos.</span></a>
       <a class="accion" href="#ventas">${ICO.ventas}<b>Ver mis ventas</b><span>Quién compró, qué curso y cuándo.</span></a>
     </div>`);
@@ -230,7 +237,7 @@ async function cursos() {
   const lista = await nube.todosLosCursos();
   marco('cursos', `
     <div class="panel-barra">
-      <h2 class="panel-titulo">Mis cursos online</h2>
+      <h2 class="panel-titulo">Mis cursos online en video</h2>
       <button class="btn" type="button" id="nuevo">${ICO.mas} Crear curso nuevo</button>
     </div>
     <p class="ayuda">${ICO.ayuda}<span>Haz clic en un curso para cambiarlo o subirle videos. Solo los cursos marcados como <b>"En tu página"</b> los pueden ver y comprar tus estudiantes.</span></p>
@@ -583,6 +590,430 @@ function pintarEditor(c) {
   };
 }
 
+// ---------- Fotos de clases presenciales y talleres ----------
+const fotoUrl = (f) => NMC.foto(f);
+// Sube una foto pública (clases presenciales y talleres). Devuelve su dirección o null.
+async function subirFotoPublica(archivo) {
+  if (!/^image\//.test(archivo.type)) {
+    await confirmar({ titulo: 'Eso no es una foto', texto: 'Elige una foto (JPG o PNG).', si: 'Entendido', soloAceptar: true });
+    return null;
+  }
+  if (archivo.size > 8 * 1024 * 1024) {
+    await confirmar({ titulo: 'La foto es muy pesada', texto: `Pesa ${mb(archivo.size)} y el máximo es 8 MB. Prueba con otra foto o envíatela por WhatsApp a ti misma para que se achique.`, si: 'Entendido', soloAceptar: true });
+    return null;
+  }
+  const ruta = await nube.subirArchivo(`fotos/${nombreArchivo(archivo)}`, archivo);
+  return nube.urlPublica(ruta);
+}
+// Borra de Storage una foto subida desde el panel (las fotos propias del sitio no se tocan)
+const borrarFotoSubida = (f) => { if (/^https?:/.test(f || '')) nube.borrarArchivo(f); };
+// Después de guardar, las páginas vuelven a leer lo nuevo
+const limpiarCache = () => { try { sessionStorage.removeItem('nm_presenciales'); sessionStorage.removeItem('nm_talleres'); } catch (x) {} };
+const copia = (x) => JSON.parse(JSON.stringify(x));
+
+// ---------- Clases presenciales ----------
+const listaPresenciales = async () => (await nube.contenido('presenciales')) || copia(NMC.PRESENCIALES);
+const guardarPresenciales = async (lista) => { await nube.guardarContenido('presenciales', lista); limpiarCache(); };
+
+async function presenciales() {
+  cargando('presenciales');
+  const lista = await listaPresenciales();
+  marco('presenciales', `
+    <div class="panel-barra">
+      <h2 class="panel-titulo">Mis clases presenciales</h2>
+      <button class="btn" type="button" id="nueva-clase">${ICO.mas} Agregar una clase</button>
+    </div>
+    <p class="ayuda">${ICO.ayuda}<span>Son las clases que se ven en <b>Cursos</b> y en la página de inicio: en tu taller, a domicilio u online en vivo. Haz clic en una para cambiar su precio, horarios, textos o fotos. Con las flechas cambias el orden en que aparecen.</span></p>
+    <ul class="lista-cursos lista-orden">${lista.map((c, k) => `<li>
+      <a class="curso-fila" href="#presencial/${encodeURIComponent(c.id)}">
+        <img src="${esc(fotoUrl(c.imagen))}" alt="">
+        <div>
+          <b>${esc(c.titulo)}</b>
+          <span class="curso-datos">${c.precio ? clp(c.precio) + (c.unidad ? ' por ' + esc(c.unidad) : '') : 'Precio a convenir'}${c.modalidad ? ' · ' + esc(c.modalidad) : ''}</span>
+          ${c.visible !== false ? `<span class="estado estado-ok">${ICO.ok} En tu página</span>` : '<span class="estado">Oculta (no se muestra)</span>'}
+        </div>
+        <span class="btn btn-borde btn-chico">Abrir</span>
+      </a>
+      <div class="clase-mover">
+        <button type="button" class="icono" data-subir="${k}" ${k === 0 ? 'disabled' : ''} aria-label="Mover ${esc(c.titulo)} hacia arriba">${ICO.arriba}</button>
+        <button type="button" class="icono" data-bajar="${k}" ${k === lista.length - 1 ? 'disabled' : ''} aria-label="Mover ${esc(c.titulo)} hacia abajo">${ICO.abajo}</button>
+      </div>
+    </li>`).join('')}</ul>`);
+
+  const mover = async (j, k) => {
+    [lista[j], lista[k]] = [lista[k], lista[j]];
+    try { await guardarPresenciales(lista); avisar('Orden guardado'); presenciales(); }
+    catch (x) { avisar('No se pudo guardar. Revisa tu internet y vuelve a intentarlo.', 'error'); }
+  };
+  document.querySelectorAll('[data-subir]').forEach(b => b.onclick = () => mover(Number(b.dataset.subir), Number(b.dataset.subir) - 1));
+  document.querySelectorAll('[data-bajar]').forEach(b => b.onclick = () => mover(Number(b.dataset.bajar), Number(b.dataset.bajar) + 1));
+  document.getElementById('nueva-clase').onclick = async () => {
+    const id = 'clase-' + Date.now().toString(36);
+    lista.push({ id, visible: false, titulo: 'Mi clase nueva', modalidad: 'En el taller · La Reina', bajada: '', resumen: '', imagen: 'cursos-02.jpg', fotos: [],
+      descripcion: '', puntosTitulo: '', puntos: '', precio: 0, unidad: 'módulo', duracion: '', datos: 'Dónde: \nHorarios: ',
+      inscripcion: 'Para tomar este curso debes pagar el total previamente y coordinar el horario de preferencia por WhatsApp o correo electrónico.',
+      whatsapp: 'Hola Daniela, quiero información sobre tus clases.', recuadros: [] });
+    try {
+      await guardarPresenciales(lista);
+      avisar('Clase creada. Ahora complétala.');
+      location.hash = 'presencial/' + id;
+    } catch (x) { avisar('No se pudo crear. Revisa tu internet y vuelve a intentarlo.', 'error'); }
+  };
+}
+
+async function editarPresencial(id) {
+  cargando('presenciales');
+  const lista = await listaPresenciales();
+  const c = lista.find(x => x.id === id);
+  if (!c) {
+    marco('presenciales', '<div class="vacio"><p>Esta clase ya no existe.</p><a class="btn" href="#presenciales">Volver a mis clases</a></div>');
+    return;
+  }
+  c.fotos = c.fotos || [];
+  c.recuadros = c.recuadros || [];
+  pintarPresencial(lista, c);
+}
+
+function pintarPresencial(lista, c) {
+  const campo = (nombre, etiqueta, ayuda = '', extra = '') => `<label>${etiqueta}
+    <input name="${nombre}" value="${esc(c[nombre] || '')}" maxlength="300" ${extra}>${ayuda ? `<small>${ayuda}</small>` : ''}</label>`;
+  const area = (nombre, etiqueta, ayuda = '', filas = 4, valor = c[nombre]) => `<label>${etiqueta}
+    <textarea name="${nombre}" rows="${filas}" maxlength="3000">${esc(valor || '')}</textarea>${ayuda ? `<small>${ayuda}</small>` : ''}</label>`;
+  const NEGRITA = 'Lo que pongas entre *asteriscos* sale en <b>negrita</b>.';
+
+  const zona = marco('presenciales', `
+    <a class="volver" href="#presenciales">${ICO.volver} Volver a mis clases</a>
+    <div class="panel-barra">
+      <h2 class="panel-titulo" id="titulo-editor">${esc(c.titulo)}</h2>
+      <a class="btn btn-borde btn-chico" href="${esc(NMC.enlace(c))}" target="_blank" rel="noopener">${ICO.ojo} Ver cómo se ve</a>
+    </div>
+
+    <form id="f-presencial" class="editor" novalidate>
+      <section class="paso">
+        <h3><span class="num">1</span> Datos de la clase</h3>
+        ${campo('titulo', 'Nombre de la clase', '', 'maxlength="120" required')}
+        ${campo('modalidad', 'Dónde o cómo es', 'Una etiqueta corta. Ej: "En el taller · La Reina", "A domicilio" u "Online en vivo".')}
+        <label>Precio
+          <span class="campo-precio"><span>$</span><input name="precio" inputmode="numeric" value="${c.precio ? precioTexto(c.precio) : ''}"></span>
+          <small>En pesos chilenos. Con precio, aparece el botón <b>Pagar e inscribirme</b> y te pagan con Mercado Pago. Si lo dejas vacío, dice "A convenir" y solo se pueden inscribir por WhatsApp.</small></label>
+        ${campo('unidad', 'El precio es por…', 'Ej: módulo, clase o mes.')}
+        ${campo('duracion', 'Duración', 'Ej: 4 clases de 2 horas · máx. 3 personas.')}
+      </section>
+
+      <section class="paso">
+        <h3><span class="num">2</span> Textos</h3>
+        ${area('resumen', 'Texto corto para la tarjeta', 'Se ve en la página de Cursos y en el inicio. 2 o 3 líneas.', 3)}
+        ${campo('bajada', 'Frase bajo el título', 'Va en la parte de arriba de la página de la clase.')}
+        ${area('descripcion', 'Descripción', 'Deja una línea en blanco para separar párrafos. ' + NEGRITA, 6)}
+        ${campo('puntosTitulo', 'Título de la lista (opcional)', 'Ej: Contenidos. Si lo dejas vacío, la lista va sin título.')}
+        ${area('puntos', 'Lista de detalles', 'Un detalle por línea: qué incluye, cupos, condiciones… ' + NEGRITA, 7)}
+      </section>
+
+      <section class="paso">
+        <h3><span class="num">3</span> Inscripción</h3>
+        ${area('datos', 'Dónde y cuándo', 'Uno por línea. Lo que va antes de los dos puntos sale en negrita. Ej: "Horarios: a convenir".', 3)}
+        ${area('inscripcion', '¿Cómo inscribirse?', '', 3)}
+        ${campo('whatsapp', 'Mensaje de WhatsApp', 'El mensaje que te llega escrito cuando alguien toca el botón de WhatsApp de esta clase.')}
+      </section>
+
+      <section class="paso">
+        <h3><span class="num">4</span> Foto de la tarjeta</h3>
+        <p class="ayuda-chica">Toca la foto que quieras usar, o sube una tuya.</p>
+        <div class="fotos-elegir" role="radiogroup" aria-label="Foto de la tarjeta">
+          ${/^https?:/.test(c.imagen) ? `<button type="button" role="radio" aria-checked="true" data-foto="${esc(c.imagen)}"><img src="${esc(c.imagen)}" alt="Tu foto"></button>` : ''}
+          ${FOTOS.map(f => `<button type="button" role="radio" aria-checked="${c.imagen === f + '.jpg'}" data-foto="${f}.jpg"><img src="assets/img/${f}.jpg" alt="" loading="lazy"></button>`).join('')}
+        </div>
+        <label class="btn btn-borde subir-archivo">${ICO.foto} Subir una foto mía<input type="file" accept="image/*" id="subir-portada" hidden></label>
+      </section>
+
+      <section class="paso">
+        <h3><span class="num">5</span> Fotos de la página <span class="contador">${c.fotos.length} de 3</span></h3>
+        <p class="ayuda-chica">Hasta 3 fotos, arriba de la descripción. Es opcional.</p>
+        ${c.fotos.length ? `<ul class="fotos-lista">${c.fotos.map((f, k) => `<li><img src="${esc(fotoUrl(f))}" alt="Foto ${k + 1}">
+          <button type="button" class="icono peligro" data-quitar-foto="${k}" aria-label="Quitar la foto ${k + 1}">${ICO.basura}</button></li>`).join('')}</ul>` : ''}
+        ${c.fotos.length < 3 ? `<label class="btn btn-borde subir-archivo">${ICO.foto} Subir una foto<input type="file" accept="image/*" id="subir-fotos" hidden></label>` : ''}
+      </section>
+
+      <section class="paso">
+        <h3><span class="num">6</span> Recuadros al final (opcional)</h3>
+        <p class="ayuda-chica">Para información extra, como "¿Qué materiales necesitas?". Van debajo de todo, cada uno con su foto.</p>
+        ${c.recuadros.length ? `<ol class="clases">${c.recuadros.map((r, k) => `<li class="clase recuadro" data-k="${k}">
+          <div class="clase-cabeza">
+            <span class="clase-num">Recuadro ${k + 1}</span>
+            <div class="clase-mover"><button type="button" class="icono peligro" data-quitar-recuadro="${k}" aria-label="Quitar el recuadro ${k + 1}">${ICO.basura}</button></div>
+          </div>
+          <label>Título<input name="r-titulo" data-k="${k}" value="${esc(r.titulo)}" maxlength="150"></label>
+          <label>Texto<textarea name="r-texto" data-k="${k}" rows="3" maxlength="1500">${esc(r.texto)}</textarea></label>
+          <div class="recuadro-foto">
+            ${r.imagen ? `<img src="${esc(fotoUrl(r.imagen))}" alt="">` : '<span class="estado">Sin foto</span>'}
+            <label class="btn btn-borde btn-chico">${ICO.foto} ${r.imagen ? 'Cambiar foto' : 'Subir foto'}<input type="file" accept="image/*" data-foto-recuadro="${k}" hidden></label>
+          </div>
+        </li>`).join('')}</ol>` : ''}
+        <button class="btn btn-borde" type="button" id="agregar-recuadro">${ICO.mas} Agregar un recuadro</button>
+      </section>
+
+      <section class="paso">
+        <h3><span class="num">7</span> ¿Mostrarla en tu página?</h3>
+        <label class="interruptor">
+          <input type="checkbox" name="visible" ${c.visible !== false ? 'checked' : ''}>
+          <span class="pista" aria-hidden="true"></span>
+          <span><b>Mostrar esta clase en mi página</b><br><small>Si está apagado, la clase no aparece en Cursos, en el inicio ni en el menú.</small></span>
+        </label>
+      </section>
+
+      ${c.pagina ? '' : `<section class="paso paso-peligro">
+        <h3>Eliminar la clase</h3>
+        <p class="ayuda-chica">Si solo quieres dejar de mostrarla por un tiempo, es mejor ocultarla (paso 7). Eliminar la borra para siempre.</p>
+        <button class="btn btn-borde btn-peligro-borde" type="button" id="borrar-clase">${ICO.basura} Eliminar esta clase</button>
+      </section>`}
+
+      <div class="barra-guardar">
+        <span id="estado-guardado">${ICO.ok} Todo guardado</span>
+        <button class="btn btn-grande" type="submit">Guardar cambios</button>
+      </div>
+    </form>`);
+
+  const f = zona.querySelector('#f-presencial');
+  marcarSucio(false);
+
+  const leer = () => {
+    ['modalidad', 'unidad', 'duracion', 'resumen', 'bajada', 'descripcion', 'puntosTitulo', 'puntos', 'datos', 'inscripcion', 'whatsapp']
+      .forEach(k => { c[k] = f[k].value.trim(); });
+    c.titulo = f.titulo.value.trim() || 'Clase sin nombre';
+    c.precio = soloDigitos(f.precio.value);
+    c.visible = f.visible.checked;
+    f.querySelectorAll('[name=r-titulo]').forEach(i => { c.recuadros[i.dataset.k].titulo = i.value.trim(); });
+    f.querySelectorAll('[name=r-texto]').forEach(i => { c.recuadros[i.dataset.k].texto = i.value.trim(); });
+  };
+  const guardar = async (texto = 'Cambios guardados. Ya se ven en tu página.') => {
+    try {
+      await guardarPresenciales(lista);
+      marcarSucio(false);
+      if (texto) avisar(texto);
+      return true;
+    } catch (x) {
+      avisar('No se pudo guardar. Revisa tu internet y vuelve a intentarlo.', 'error');
+      return false;
+    }
+  };
+  const guardarYRepintar = async (texto) => { if (await guardar(texto)) pintarPresencial(lista, c); };
+
+  f.addEventListener('input', (e) => {
+    if (e.target.type === 'file') return;
+    marcarSucio(true);
+    if (e.target.name === 'titulo') document.getElementById('titulo-editor').textContent = e.target.value || 'Clase sin nombre';
+  });
+  f.precio.addEventListener('blur', () => { const n = soloDigitos(f.precio.value); f.precio.value = n ? precioTexto(n) : ''; });
+  f.addEventListener('submit', (e) => { e.preventDefault(); leer(); guardar(); });
+
+  // Sube una foto y, si sale bien, la guarda con lo que esté escrito
+  const conFoto = async (input, alSubir, texto) => {
+    const archivo = input.files[0];
+    input.value = '';
+    if (!archivo || await esperarSubidaFoto()) return;
+    avisar('Subiendo la foto…');
+    subiendo++;
+    try {
+      const url = await subirFotoPublica(archivo);
+      subiendo--;
+      if (!url) return;
+      leer();
+      alSubir(url);
+      await guardarYRepintar(texto);
+    } catch (x) {
+      subiendo = Math.max(0, subiendo - 1);
+      avisar('No se pudo subir la foto. Intenta de nuevo.', 'error');
+    }
+  };
+
+  // Foto de la tarjeta
+  f.querySelectorAll('[data-foto]').forEach(b => b.onclick = () => {
+    f.querySelectorAll('[data-foto]').forEach(x => x.setAttribute('aria-checked', x === b));
+    c.imagen = b.dataset.foto;
+    marcarSucio(true);
+  });
+  document.getElementById('subir-portada').onchange = (e) => conFoto(e.target, (url) => { c.imagen = url; }, 'Foto subida y guardada');
+
+  // Fotos de la página
+  document.getElementById('subir-fotos')?.addEventListener('change', (e) => conFoto(e.target, (url) => { c.fotos.push(url); }, 'Foto subida y guardada'));
+  f.querySelectorAll('[data-quitar-foto]').forEach(b => b.onclick = async () => {
+    const k = Number(b.dataset.quitarFoto);
+    if (!await confirmar({ titulo: '¿Quitar esta foto?', texto: 'La foto deja de verse en la página de la clase.', si: 'Sí, quitarla', no: 'No', peligro: true })) return;
+    leer();
+    const [quitada] = c.fotos.splice(k, 1);
+    if (await guardar('Foto quitada')) { borrarFotoSubida(quitada); pintarPresencial(lista, c); }
+  });
+
+  // Recuadros
+  document.getElementById('agregar-recuadro').onclick = () => {
+    leer();
+    c.recuadros.push({ titulo: '', texto: '', imagen: '' });
+    guardarYRepintar('Recuadro agregado. Escribe su título y su texto.');
+  };
+  f.querySelectorAll('[data-quitar-recuadro]').forEach(b => b.onclick = async () => {
+    const k = Number(b.dataset.quitarRecuadro);
+    leer();
+    const r = c.recuadros[k];
+    if (!await confirmar({ titulo: `¿Quitar el recuadro ${k + 1}?`, texto: `Vas a quitar ${r.titulo ? `<b>"${esc(r.titulo)}"</b>` : 'este recuadro'}. Esto no se puede deshacer.`, si: 'Sí, quitarlo', no: 'No', peligro: true })) return;
+    c.recuadros.splice(k, 1);
+    if (await guardar('Recuadro quitado')) { borrarFotoSubida(r.imagen); pintarPresencial(lista, c); }
+  });
+  f.querySelectorAll('[data-foto-recuadro]').forEach(inp => inp.onchange = () => {
+    const k = Number(inp.dataset.fotoRecuadro);
+    const anterior = c.recuadros[k].imagen;
+    conFoto(inp, (url) => { c.recuadros[k].imagen = url; borrarFotoSubida(anterior); }, 'Foto subida y guardada');
+  });
+
+  // Eliminar (solo las clases agregadas desde el panel; las originales tienen su propia página)
+  document.getElementById('borrar-clase')?.addEventListener('click', async () => {
+    const ok = await confirmar({ titulo: '¿Eliminar esta clase?', texto: `Se borrará <b>"${esc(c.titulo)}"</b> para siempre. Esto no se puede deshacer.`, si: 'Sí, eliminar para siempre', no: 'No, conservarla', peligro: true });
+    if (!ok) return;
+    const resto = lista.filter(x => x !== c);
+    try {
+      await guardarPresenciales(resto);
+      [c.imagen, ...c.fotos, ...c.recuadros.map(r => r.imagen)].forEach(borrarFotoSubida);
+      marcarSucio(false);
+      avisar('Clase eliminada');
+      location.hash = 'presenciales';
+    } catch (x) { avisar('No se pudo eliminar. Intenta de nuevo.', 'error'); }
+  });
+}
+
+const esperarSubidaFoto = async () => {
+  if (!subiendo) return false;
+  await confirmar({ titulo: 'Espera un momento', texto: 'Todavía se está subiendo una foto. Cuando termine, podrás subir otra.', si: 'Entendido', soloAceptar: true });
+  return true;
+};
+
+// ---------- Talleres realizados ----------
+const listaTalleres = async () => (await nube.contenido('talleres')) || copia(NMC.TALLERES);
+
+async function talleres() {
+  cargando('talleres');
+  pintarTalleres(await listaTalleres());
+}
+
+function pintarTalleres(lista) {
+  const zona = marco('talleres', `
+    <div class="panel-barra">
+      <h2 class="panel-titulo">Talleres realizados</h2>
+      <a class="btn btn-borde btn-chico" href="talleres" target="_blank" rel="noopener">${ICO.ojo} Ver cómo se ve</a>
+    </div>
+    <p class="ayuda">${ICO.ayuda}<span>Cada taller tiene sus años, su nombre, un texto y sus fotos. Aparecen en tu página en este mismo orden; usa las flechas para cambiarlo. Las fotos se guardan solas apenas terminan de subir.</span></p>
+
+    <form id="f-talleres" class="editor" novalidate>
+      ${lista.map((t, k) => `<section class="paso taller" data-k="${k}">
+        <div class="clase-cabeza">
+          <h3>Taller ${k + 1}</h3>
+          <div class="clase-mover">
+            <button type="button" class="icono" data-subir-taller="${k}" ${k === 0 ? 'disabled' : ''} aria-label="Mover el taller ${k + 1} hacia arriba">${ICO.arriba}</button>
+            <button type="button" class="icono" data-bajar-taller="${k}" ${k === lista.length - 1 ? 'disabled' : ''} aria-label="Mover el taller ${k + 1} hacia abajo">${ICO.abajo}</button>
+            <button type="button" class="icono peligro" data-quitar-taller="${k}" aria-label="Quitar el taller ${k + 1}">${ICO.basura}</button>
+          </div>
+        </div>
+        <label>Años<input name="anios" data-k="${k}" value="${esc(t.anios)}" maxlength="40" placeholder="Ej: 2025 - 2026"></label>
+        <label>Nombre del taller<input name="titulo" data-k="${k}" value="${esc(t.titulo)}" maxlength="200"></label>
+        <label>Texto<textarea name="texto" data-k="${k}" rows="4" maxlength="2000">${esc(t.texto)}</textarea>
+          <small>Qué hicieron, con quién y dónde. Lo que pongas entre *asteriscos* sale en <b>negrita</b>.</small></label>
+        <div>
+          <p class="etiqueta-campo">Fotos <span class="contador">${(t.fotos || []).length}</span></p>
+          ${(t.fotos || []).length ? `<ul class="fotos-lista">${t.fotos.map((f, j) => `<li><img src="${esc(fotoUrl(f))}" alt="Foto ${j + 1}" loading="lazy">
+            <button type="button" class="icono peligro" data-quitar-foto="${k}/${j}" aria-label="Quitar la foto ${j + 1}">${ICO.basura}</button></li>`).join('')}</ul>` : ''}
+          <label class="btn btn-borde subir-archivo">${ICO.foto} Subir fotos<input type="file" accept="image/*" multiple data-subir-fotos="${k}" hidden></label>
+          <div class="subida" hidden><div class="progreso"><span></span></div><p></p></div>
+        </div>
+      </section>`).join('')}
+
+      <button class="btn btn-borde" type="button" id="agregar-taller">${ICO.mas} Agregar un taller</button>
+
+      <div class="barra-guardar">
+        <span id="estado-guardado">${ICO.ok} Todo guardado</span>
+        <button class="btn btn-grande" type="submit">Guardar cambios</button>
+      </div>
+    </form>`);
+
+  const f = zona.querySelector('#f-talleres');
+  marcarSucio(false);
+
+  const leer = () => {
+    ['anios', 'titulo', 'texto'].forEach(campo => f.querySelectorAll(`[name=${campo}]`).forEach(i => { lista[i.dataset.k][campo] = i.value.trim(); }));
+    lista.forEach(t => { t.titulo = t.titulo || 'Taller sin nombre'; t.fotos = t.fotos || []; });
+  };
+  const guardar = async (texto = 'Cambios guardados. Ya se ven en tu página.') => {
+    try {
+      await nube.guardarContenido('talleres', lista);
+      limpiarCache();
+      marcarSucio(false);
+      if (texto) avisar(texto);
+      return true;
+    } catch (x) {
+      avisar('No se pudo guardar. Revisa tu internet y vuelve a intentarlo.', 'error');
+      return false;
+    }
+  };
+  const guardarYRepintar = async (texto) => { if (await guardar(texto)) pintarTalleres(lista); };
+
+  f.addEventListener('input', (e) => { if (e.target.type !== 'file') marcarSucio(true); });
+  f.addEventListener('submit', (e) => { e.preventDefault(); leer(); guardar(); });
+
+  document.getElementById('agregar-taller').onclick = async () => {
+    if (await esperarSubidaFoto()) return;
+    leer();
+    lista.unshift({ anios: String(new Date().getFullYear()), titulo: 'Mi taller nuevo', texto: '', fotos: [] });
+    await guardarYRepintar('Taller agregado arriba de todo. Completa sus datos y sube sus fotos.');
+  };
+  const mover = async (j, k) => { if (await esperarSubidaFoto()) return; leer(); [lista[j], lista[k]] = [lista[k], lista[j]]; guardarYRepintar('Orden guardado'); };
+  f.querySelectorAll('[data-subir-taller]').forEach(b => b.onclick = () => mover(Number(b.dataset.subirTaller), Number(b.dataset.subirTaller) - 1));
+  f.querySelectorAll('[data-bajar-taller]').forEach(b => b.onclick = () => mover(Number(b.dataset.bajarTaller), Number(b.dataset.bajarTaller) + 1));
+  f.querySelectorAll('[data-quitar-taller]').forEach(b => b.onclick = async () => {
+    if (await esperarSubidaFoto()) return;
+    leer();
+    const k = Number(b.dataset.quitarTaller);
+    const t = lista[k];
+    const ok = await confirmar({ titulo: `¿Quitar el taller ${k + 1}?`, texto: `Vas a quitar <b>"${esc(t.titulo)}"</b> y sus fotos de tu página. Esto no se puede deshacer.`, si: 'Sí, quitar el taller', no: 'No, dejarlo', peligro: true });
+    if (!ok) return;
+    lista.splice(k, 1);
+    if (await guardar('Taller quitado')) { t.fotos.forEach(borrarFotoSubida); pintarTalleres(lista); }
+  });
+  f.querySelectorAll('[data-quitar-foto]').forEach(b => b.onclick = async () => {
+    if (await esperarSubidaFoto()) return;
+    const [k, j] = b.dataset.quitarFoto.split('/').map(Number);
+    if (!await confirmar({ titulo: '¿Quitar esta foto?', texto: 'La foto deja de verse en tu página.', si: 'Sí, quitarla', no: 'No', peligro: true })) return;
+    leer();
+    const [quitada] = lista[k].fotos.splice(j, 1);
+    if (await guardar('Foto quitada')) { borrarFotoSubida(quitada); pintarTalleres(lista); }
+  });
+
+  // Varias fotos a la vez, una tras otra, con su avance
+  f.querySelectorAll('[data-subir-fotos]').forEach(inp => inp.onchange = async () => {
+    const archivos = [...inp.files];
+    inp.value = '';
+    if (!archivos.length || await esperarSubidaFoto()) return;
+    const k = Number(inp.dataset.subirFotos);
+    const caja = inp.closest('div').querySelector('.subida');
+    const barra = caja.querySelector('.progreso span');
+    caja.hidden = false;
+    subiendo++;
+    const nuevas = [];
+    try {
+      for (const [n, archivo] of archivos.entries()) {
+        caja.querySelector('p').innerHTML = `<b>Subiendo foto ${n + 1} de ${archivos.length}…</b> No cierres esta página hasta que termine.`;
+        barra.style.width = Math.round(100 * n / archivos.length) + '%';
+        const url = await subirFotoPublica(archivo);
+        if (url) nuevas.push(url);
+      }
+    } catch (x) {
+      avisar('No se pudieron subir todas las fotos. Revisa tu internet y vuelve a intentarlo.', 'error');
+    }
+    subiendo = Math.max(0, subiendo - 1);
+    caja.hidden = true;
+    if (!nuevas.length) return;
+    leer();
+    lista[k].fotos.push(...nuevas);
+    await guardarYRepintar(nuevas.length === 1 ? 'Foto subida y guardada' : `${nuevas.length} fotos subidas y guardadas`);
+  });
+}
+
 // ---------- Textos ----------
 const GRUPOS_TEXTOS = [
   ['Arriba en todas las páginas y en el pie', [
@@ -639,6 +1070,9 @@ async function textos() {
 }
 
 // ---------- Ventas ----------
+// Teléfono chileno para wa.me: "9 1234 5678" -> "56912345678"
+const whatsappDe = (t) => { const n = String(t).replace(/\D/g, ''); return n.length === 9 ? '56' + n : n; };
+
 async function ventas() {
   cargando('ventas');
   const [v, alumnas] = await Promise.all([nube.ventas(), nube.totalAlumnas()]);
@@ -653,11 +1087,15 @@ async function ventas() {
       <div><span>Desde el comienzo</span><b>${clp(suma(v))}</b><small>${v.length} venta${v.length === 1 ? '' : 's'}</small></div>
       <div><span>Estudiantes</span><b>${alumnas}</b><small>personas con cuenta</small></div>
     </div>
-    <p class="ayuda">${ICO.ayuda}<span>El dinero llega a tu cuenta de Mercado Pago. Ahí mismo ves cuánto descontó de comisión.</span></p>
+    <p class="ayuda">${ICO.ayuda}<span>El dinero llega a tu cuenta de Mercado Pago. Ahí mismo ves cuánto descontó de comisión. En las <b>clases presenciales</b> tienes el WhatsApp de cada persona para coordinar el horario.</span></p>
     ${v.length ? `<ul class="ventas">${v.map(x => `<li>
-        <div><b>${esc(x.nombre || 'Estudiante')}</b><span>${esc(x.correo)}</span></div>
-        <div><span>${esc(x.titulo)}</span><span>${fecha(x)}</span></div>
+        <div><b>${esc(x.nombre || 'Estudiante')}</b><span>${esc(x.correo)}</span>${x.telefono ? `<span>${esc(x.telefono)}</span>` : ''}</div>
+        <div><span class="estado ${x.tipo === 'presencial' ? 'estado-falta' : ''}">${x.tipo === 'presencial' ? 'Clase presencial' : 'Curso online'}</span><span>${esc(x.titulo)}</span><span>${fecha(x)}</span></div>
         <b class="monto">${clp(x.monto)}</b>
+        ${x.tipo === 'presencial' ? `<div class="venta-coordinar">
+          ${x.nota ? `<p><b>Su comentario:</b> ${esc(x.nota)}</p>` : ''}
+          ${x.telefono ? `<a class="btn btn-chico" href="https://wa.me/${esc(whatsappDe(x.telefono))}?text=${encodeURIComponent(`Hola ${(x.nombre || '').split(' ')[0]}, soy Daniela. Recibí tu pago de "${x.titulo}". ¿Coordinamos el horario?`)}" target="_blank" rel="noopener">Escribirle por WhatsApp</a>` : ''}
+        </div>` : ''}
       </li>`).join('')}</ul>` : '<div class="vacio"><p>Todavía no tienes ventas. Cuando alguien compre un curso, aparecerá aquí.</p></div>'}`);
 }
 
@@ -673,6 +1111,9 @@ async function mostrar() {
   try {
     if (seccion === 'curso' && id) await editarCurso(decodeURIComponent(id));
     else if (seccion === 'cursos') await cursos();
+    else if (seccion === 'presencial' && id) await editarPresencial(decodeURIComponent(id));
+    else if (seccion === 'presenciales') await presenciales();
+    else if (seccion === 'talleres') await talleres();
     else if (seccion === 'textos') await textos();
     else if (seccion === 'ventas') await ventas();
     else await inicio();

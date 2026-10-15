@@ -23,12 +23,17 @@ export async function GET(request) {
   if (!resultado) return new Response(pagina(ref), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 
   const base = sitio(request);
+  // Clase presencial: "insc|inscripcionId|precio"
+  const insc = ref.startsWith('insc|') ? (await db.collection('inscripciones').doc(curso).get()).data() : null;
+  if (ref.startsWith('insc|') && !insc) return new Response('Inscripción no encontrada', { status: 404 });
   if (resultado !== 'approved') {
+    if (insc) return Response.redirect(`${base}/${insc.volver}${insc.volver.includes('?') ? '&' : '?'}pago=error`, 302);
     return Response.redirect(`${base}/curso?id=${encodeURIComponent(curso)}&pago=error`, 302);
   }
   const id = String(Date.now());
   const pago = { id, status: 'approved', external_reference: ref, currency_id: 'CLP', transaction_amount: Number(precio), payment_method_id: 'simulado' };
   await db.collection('_pagos_simulados').doc(id).set(pago);
   await registrarPago(pago); // hace lo mismo que el webhook
+  if (insc) return Response.redirect(`${base}/inscripcion?id=${encodeURIComponent(curso)}&payment_id=${id}&status=approved`, 302);
   return Response.redirect(`${base}/aula?pago=ok&curso=${encodeURIComponent(curso)}&payment_id=${id}&status=approved`, 302);
 }
