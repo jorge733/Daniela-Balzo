@@ -160,6 +160,33 @@ const NM = (() => {
     }).join('')
   };
 
+  // Un lugar con varias fotos las va turnando cada 5 segundos, con un fundido suave
+  // (sin fundido si la persona pidió reducir el movimiento).
+  let turnando = null;
+  function ponerFotos(el, fotos) {
+    const lista = fotos.join('\n');
+    if (el.dataset.fotos === lista) return;
+    el.dataset.fotos = lista;
+    el.dataset.pos = 0;
+    if (el.getAttribute('src') !== fotos[0]) el.src = fotos[0];
+    if (fotos.length < 2 || turnando) return;
+    const suave = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    turnando = setInterval(() => document.querySelectorAll('img[data-fotos]').forEach(img => {
+      const l = img.dataset.fotos.split('\n');
+      if (l.length < 2 || document.hidden) return;
+      const pos = (Number(img.dataset.pos) + 1) % l.length;
+      img.dataset.pos = pos;
+      const siguiente = new Image();
+      siguiente.onload = () => {
+        if (!suave) { img.src = l[pos]; return; }
+        img.style.transition = 'opacity .6s';
+        img.style.opacity = 0;
+        setTimeout(() => { img.src = l[pos]; img.style.opacity = 1; }, 600);
+      };
+      siguiente.src = l[pos];
+    }), 5000);
+  }
+
   /** Pone los textos y fotos guardados en los elementos con data-texto (los demás quedan como en el HTML). */
   function ponerTextos(raiz = document) {
     const t = { ...TEXTOS, ...guardados };
@@ -167,7 +194,7 @@ const NM = (() => {
       const v = t[el.dataset.texto];
       if (!v) return;
       const tipo = el.dataset.tipo;
-      if (tipo === 'foto') { if (el.getAttribute('src') !== foto(v)) el.src = foto(v); return; }
+      if (tipo === 'foto') { ponerFotos(el, String(v).split('\n').filter(Boolean).map(foto)); return; }
       if (DIBUJAR[tipo]) { const html = DIBUJAR[tipo](v); if (el.dataset.puesto !== html) { el.innerHTML = html; el.dataset.puesto = html; } return; }
       if (el.textContent !== v) el.textContent = v;
     });

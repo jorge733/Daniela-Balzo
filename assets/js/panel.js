@@ -1213,14 +1213,9 @@ function pintarPagina(pag, guardados, orig, gals) {
   const tipo = (k) => orig[k]?.tipo || 'texto';
   const valor = (k) => guardados[k] || original(k);
 
-  const campoFoto = (k, etiqueta) => `<div class="campo-foto" data-campo-foto="${k}">
+  const campoFoto = (k, etiqueta) => `<div class="campo-fotos" data-campo-foto="${k}">
       <p class="etiqueta-campo">${esc(etiqueta)}</p>
-      <div class="recuadro-foto">
-        <img src="${esc(NM.foto(valor(k)))}" alt="">
-        <label class="btn btn-borde btn-chico">${ICO.foto} Cambiar foto<input type="file" accept="image/*" data-foto-campo="${k}" hidden></label>
-        <button type="button" class="btn btn-borde btn-chico" data-foto-original="${k}" ${valor(k) === original(k) ? 'hidden' : ''}>Volver a la foto original</button>
-      </div>
-      <div class="subida" hidden><div class="progreso"><span></span></div><p></p></div>
+      <div data-fotos-editar></div>
     </div>`;
   const campoTexto = (k, etiqueta, ayuda = '') => {
     const t = tipo(k);
@@ -1291,72 +1286,70 @@ function pintarPagina(pag, guardados, orig, gals) {
     } catch (x) { avisar('No se pudo guardar. Revisa tu internet y vuelve a intentarlo.', 'error'); }
   });
 
-  // ----- Fotos sueltas: se guardan apenas suben -----
-  const ponerFoto = async (k, v) => {
-    const caja = f.querySelector(`[data-campo-foto="${k}"]`);
-    const anterior = guardados[k];
-    const esOriginal = v === original(k);
-    await nube.guardarTextos(esOriginal ? {} : { [k]: v }, esOriginal ? [k] : []);
-    limpiarCacheTextos();
-    guardados[k] = esOriginal ? '' : v;
-    if (anterior && anterior !== v) borrarFotoSubida(anterior);
-    caja.querySelector('img').src = NM.foto(v);
-    caja.querySelector('[data-foto-original]').hidden = esOriginal;
-  };
-  f.querySelectorAll('[data-foto-campo]').forEach(inp => inp.onchange = async () => {
-    const archivo = inp.files[0];
-    inp.value = '';
-    if (!archivo || await esperarSubidaFoto()) return;
-    const caja = inp.closest('[data-campo-foto]').querySelector('.subida');
-    caja.hidden = false;
-    caja.querySelector('p').innerHTML = '<b>Subiendo la foto…</b> No cierres esta página hasta que termine.';
-    subiendo++;
-    try {
-      const url = await subirFotoPublica(archivo);
-      if (url) { await ponerFoto(inp.dataset.fotoCampo, url); avisar('Foto subida y guardada. Ya se ve en tu página.'); }
-    } catch (x) {
-      avisar('No se pudo subir la foto. Revisa tu internet y vuelve a intentarlo.', 'error');
-    }
-    subiendo = Math.max(0, subiendo - 1);
-    caja.hidden = true;
-  });
-  f.querySelectorAll('[data-foto-original]').forEach(b => b.onclick = async () => {
-    if (!await confirmar({ titulo: '¿Volver a la foto original?', texto: 'Se quita la foto que subiste y vuelve la que estaba al principio.', si: 'Sí, volver a la original', no: 'No' })) return;
-    try { await ponerFoto(b.dataset.fotoOriginal, original(b.dataset.fotoOriginal)); avisar('Listo, volvió la foto original.'); }
-    catch (x) { avisar('No se pudo guardar. Revisa tu internet y vuelve a intentarlo.', 'error'); }
+  // ----- Fotos de un campo: una o varias (con varias, en la página van rotando) -----
+  // Se guardan en sitio/textos separadas por saltos de línea.
+  f.querySelectorAll('[data-campo-foto]').forEach(caja => {
+    const k = caja.dataset.campoFoto;
+    const pintarFotos = () => editorFotos(caja.querySelector('[data-fotos-editar]'), {
+      lista: valor(k).split('\n').filter(Boolean),
+      originales: [original(k)],
+      minimo: 1,
+      ayuda: 'Si subes más de una, en tu página se van turnando solas cada pocos segundos.',
+      guardar: async (nueva) => {
+        await nube.guardarTextos(nueva ? { [k]: nueva.join('\n') } : {}, nueva ? [] : [k]);
+        guardados[k] = nueva ? nueva.join('\n') : '';
+        pintarFotos();
+      }
+    });
+    pintarFotos();
   });
 
-  // ----- Galerías del portafolio -----
-  f.querySelectorAll('[data-galeria-editar]').forEach(caja => editorGaleria(caja, caja.dataset.galeriaEditar, gals));
+  // ----- Galerías (portafolio y secciones "Más fotos") -----
+  f.querySelectorAll('[data-galeria-editar]').forEach(caja => {
+    const nombre = caja.dataset.galeriaEditar;
+    const pintarGaleria = () => editorFotos(caja, {
+      lista: gals[nombre] || NM.GALERIAS[nombre] || [],
+      originales: NM.GALERIAS[nombre] || [],
+      cambiada: !!gals[nombre],
+      guardar: async (nueva) => {
+        await nube.guardarGaleria(nombre, nueva);
+        if (nueva) gals[nombre] = nueva; else delete gals[nombre];
+        pintarGaleria();
+      }
+    });
+    pintarGaleria();
+  });
 }
 
-function editorGaleria(caja, nombre, gals) {
-  const cambiada = !!gals[nombre];
-  const originales = NM.GALERIAS[nombre] || [];
-  const lista = [...(gals[nombre] || NM.GALERIAS[nombre] || [])];
+/** Lista de fotos para subir varias, ordenarlas y quitarlas. Todo se guarda apenas cambia.
+    guardar(nueva) recibe la lista nueva, o null para volver a las originales.
+    minimo: 1 cuando el lugar no puede quedar sin foto (al quitar la última vuelve la original). */
+function editorFotos(caja, { lista: actual, originales, guardar: guardarLista, minimo = 0, cambiada, ayuda = '' }) {
+  const lista = [...actual];
+  const esOriginal = (l) => l.length === originales.length && l.every((x, i) => x === originales[i]);
+  const hayCambios = cambiada ?? !esOriginal(lista);
+  const unaOriginal = originales.length === 1;
   caja.innerHTML = `
-    <p class="ayuda-chica">${lista.length ? 'Aparecen en tu página en este orden. Con las flechas las mueves; las fotos nuevas quedan al principio.' : 'Todavía no hay fotos aquí. Sube las que quieras.'} Todo se guarda solo.</p>
-    <p class="etiqueta-campo">Fotos <span class="contador">${lista.length}</span></p>
+    <p class="ayuda-chica">${lista.length > 1 ? 'Aparecen en este orden; con las flechas las mueves. Las fotos nuevas quedan al principio.' : lista.length ? '' : 'Todavía no hay fotos aquí. Sube las que quieras.'} ${ayuda} Todo se guarda solo.</p>
+    ${lista.length > 1 ? `<p class="etiqueta-campo">Fotos <span class="contador">${lista.length}</span></p>` : ''}
     <ul class="fotos-lista galeria-editar">${lista.map((f, j) => `<li><img src="${esc(NM.foto(f))}" alt="Foto ${j + 1}" loading="lazy">
-      <span class="foto-num">${j + 1}</span>
+      ${lista.length > 1 ? `<span class="foto-num">${j + 1}</span>` : ''}
       <div class="foto-controles">
         <button type="button" class="icono" data-mover="${j}/-1" ${j === 0 ? 'disabled' : ''} aria-label="Mover la foto ${j + 1} antes">${ICO.izquierda}</button>
         <button type="button" class="icono peligro" data-quitar="${j}" aria-label="Quitar la foto ${j + 1}">${ICO.basura}</button>
         <button type="button" class="icono" data-mover="${j}/1" ${j === lista.length - 1 ? 'disabled' : ''} aria-label="Mover la foto ${j + 1} después">${ICO.derecha}</button>
       </div></li>`).join('')}</ul>
     <div class="botones-fila">
-      <label class="btn subir-archivo">${ICO.subir} Subir fotos<input type="file" accept="image/*" multiple data-subir-galeria hidden></label>
-      ${cambiada && (lista.length || originales.length) ? `<button type="button" class="btn btn-borde" data-restaurar>${originales.length ? 'Volver a las fotos originales' : 'Quitar todas las fotos'}</button>` : ''}
+      <label class="btn subir-archivo">${ICO.subir} ${lista.length ? 'Agregar fotos' : 'Subir fotos'}<input type="file" accept="image/*" multiple data-subir-galeria hidden></label>
+      ${hayCambios && (lista.length || originales.length) ? `<button type="button" class="btn btn-borde" data-restaurar>${!originales.length ? 'Quitar todas las fotos' : unaOriginal ? 'Volver a la foto original' : 'Volver a las fotos originales'}</button>` : ''}
     </div>
     <div class="subida" hidden><div class="progreso"><span></span></div><p></p></div>`;
 
   const guardar = async (nueva, texto) => {
     try {
-      await nube.guardarGaleria(nombre, nueva);
+      await guardarLista(nueva && esOriginal(nueva) ? null : nueva);
       limpiarCacheTextos();
-      if (nueva) gals[nombre] = nueva; else delete gals[nombre];
       avisar(texto);
-      editorGaleria(caja, nombre, gals);
       return true;
     } catch (x) {
       avisar('No se pudo guardar. Revisa tu internet y vuelve a intentarlo.', 'error');
@@ -1373,17 +1366,25 @@ function editorGaleria(caja, nombre, gals) {
   caja.querySelectorAll('[data-quitar]').forEach(b => b.onclick = async () => {
     if (await esperarSubidaFoto()) return;
     const j = Number(b.dataset.quitar);
-    if (!await confirmar({ titulo: `¿Quitar la foto ${j + 1}?`, texto: 'La foto deja de verse en tu página.', si: 'Sí, quitarla', no: 'No', peligro: true })) return;
+    const ultima = lista.length <= minimo;
+    if (ultima && esOriginal(lista)) {
+      await confirmar({ titulo: 'Este lugar necesita una foto', texto: 'Para cambiarla, primero agrega otra foto y después quita esta.', si: 'Entendido', soloAceptar: true });
+      return;
+    }
+    const ok = await confirmar(ultima
+      ? { titulo: '¿Quitar esta foto?', texto: 'Este lugar necesita una foto, así que vuelve la que estaba al principio.', si: 'Sí, volver a la original', no: 'No' }
+      : { titulo: `¿Quitar la foto ${j + 1}?`, texto: 'La foto deja de verse en tu página.', si: 'Sí, quitarla', no: 'No', peligro: true });
+    if (!ok) return;
     const [quitada] = lista.splice(j, 1);
-    if (await guardar(lista, 'Foto quitada')) borrarFotoSubida(quitada);
+    if (await guardar(ultima ? null : lista, ultima ? 'Volvió la foto original' : 'Foto quitada')) borrarFotoSubida(quitada);
   });
   caja.querySelector('[data-restaurar]')?.addEventListener('click', async () => {
     if (await esperarSubidaFoto()) return;
     const ok = originales.length
-      ? await confirmar({ titulo: '¿Volver a las fotos originales?', texto: 'Se quitan las fotos que subiste y vuelven las de antes, en su orden original. Esto no se puede deshacer.', si: 'Sí, volver a las originales', no: 'No', peligro: true })
+      ? await confirmar({ titulo: unaOriginal ? '¿Volver a la foto original?' : '¿Volver a las fotos originales?', texto: 'Se quitan las fotos que subiste y vuelve lo que estaba al principio. Esto no se puede deshacer.', si: 'Sí, volver a lo original', no: 'No', peligro: true })
       : await confirmar({ titulo: '¿Quitar todas las fotos?', texto: 'Se quitan todas las fotos de esta sección y deja de mostrarse en tu página. Esto no se puede deshacer.', si: 'Sí, quitarlas', no: 'No', peligro: true });
     if (!ok) return;
-    if (await guardar(null, originales.length ? 'Volvieron las fotos originales' : 'Fotos quitadas')) lista.forEach(borrarFotoSubida);
+    if (await guardar(null, originales.length ? 'Volvió lo original' : 'Fotos quitadas')) lista.forEach(borrarFotoSubida);
   });
 
   // Varias fotos a la vez, una tras otra, con su avance

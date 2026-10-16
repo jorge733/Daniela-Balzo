@@ -199,9 +199,9 @@ body[data-pagina="panel"] .pie { display: none; }
 .taller .clase-cabeza h3 { font-size: 1.2rem; }
 
 /* Mis páginas: fotos sueltas y galerías del portafolio */
-.campo-foto .etiqueta-campo { margin-bottom: 6px; }
-.campo-foto .recuadro-foto img { width: 120px; height: 90px; }
-.campo-foto .subida { margin-top: 8px; }
+.campo-fotos .etiqueta-campo { margin-bottom: 6px; }
+.campo-fotos .recuadro-foto img { width: 120px; height: 90px; }
+.campo-fotos .subida { margin-top: 8px; }
 .paso small a, .paso .ayuda-chica a { color: var(--morado-2); font-weight: 600; }
 .galeria-editar { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
 .galeria-editar .foto-num { position: absolute; top: 6px; left: 6px; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 13px; background: rgba(40, 20, 60, .75); color: #fff; font-size: .8rem; font-weight: 700; display: grid; place-items: center; }
