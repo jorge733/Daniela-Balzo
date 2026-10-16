@@ -47,6 +47,7 @@ Sin credenciales de Mercado Pago, el pago se simula con `/api/simular-pago` (sol
 5. Crear la cuenta de Daniela en Authentication y darle acceso al panel con `scripts/crear-admin.mjs`.
 6. Con el dominio ya conectado, actualizar la vista previa al compartir: `node scripts/vista-previa.mjs https://<dominio>` (necesita Chrome y ffmpeg para regenerar la imagen; con `--sin-imagen` solo cambia las direcciones).
 7. Cambiar `MODO_PRUEBA` a `false` en `assets/js/datos.js`, completar lo marcado como pendiente en `terminos.html` y `privacidad.html` y conectar el dominio.
+8. Con el dominio ya conectado, verificarlo en Resend para que los avisos de venta salgan desde él y no caigan en spam: en Resend, *Domains > Add Domain*, copiar los registros DNS que muestra (SPF, DKIM y MX de envío) en el panel donde se compró el dominio y esperar a que queden en *Verified*. Después, en Vercel, poner `AVISO_REMITENTE=Negra Mora <avisos@<dominio>>` y volver a publicar. No hace falta crear una casilla de correo: `avisos@` solo envía, y las respuestas le llegan al correo de quien compró. Daniela sigue usando su Gmail.
 
 ## Estructura
 
