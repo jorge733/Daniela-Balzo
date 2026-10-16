@@ -134,7 +134,11 @@ const NM = (() => {
     'vestuario': [...desde('vestuario', 39, 45), ...desde('vestuario', 1, 16), 'cursos-02.jpg', ...desde('vestuario', 18, 38)],
     'accesorios': [...desde('accesorios', 23, 30), ...desde('accesorios', 1, 8), 'cursos-07.jpg', ...desde('accesorios', 10, 22)],
     'ilustracion-textil': ['inicio-03.jpg', ...desde('ilustracion-textil', 2, 14)],
-    'arte-terapia': desde('arte-terapia', 1, 16)
+    'arte-terapia': desde('arte-terapia', 1, 16),
+    // Fotos bajo la portada del inicio
+    'inicio-tira': desde('inicio', 1, 4),
+    // Secciones "Más fotos" de cada página: parten vacías y no se muestran hasta que Daniela suba fotos
+    'inicio': [], 'quien-soy': [], 'cursos': [], 'contacto': [], 'patrones': []
   };
 
   // ---------- Textos editables en las páginas ----------

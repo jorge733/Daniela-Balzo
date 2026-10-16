@@ -63,7 +63,9 @@ const NMC = (() => {
     </article>`;
 
   const fichaClase = (c) => {
+    // Las 3 primeras fotos van arriba de la descripción; las demás, en una galería al final
     const fotos = (c.fotos || []).slice(0, 3);
+    const masFotos = (c.fotos || []).slice(3);
     const datos = lineas(c.datos).map(l => {
       const i = l.indexOf(':');
       return i > 0 && i < 30 ? `<li><b>${esc(l.slice(0, i + 1))}</b>${fmt(l.slice(i + 1))}</li>` : `<li>${fmt(l)}</li>`;
@@ -115,6 +117,14 @@ const NMC = (() => {
             </div>
           </article>`).join('')}
         </div>
+      </div>
+    </section>` : ''}
+
+    ${masFotos.length ? `<section class="banda">
+      <div class="wrap">
+        <div class="encabezado-seccion centro"><h2 class="hilo">Más fotos</h2></div>
+        <div class="galeria${masFotos.length < 4 ? ' galeria-pocas' : ''}" style="--n: ${masFotos.length}" data-galeria="propia">${masFotos.map((f, i) =>
+          `<button type="button" data-src="${esc(foto(f))}"><img src="${esc(foto(f))}" alt="${esc(c.titulo)}, foto ${i + 4}" loading="lazy"></button>`).join('')}</div>
       </div>
     </section>` : ''}`;
   };

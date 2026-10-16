@@ -137,7 +137,8 @@ li::marker { color: var(--rosa-fuerte); }
 /* Tira de fotos */
 .tira { display: grid; grid-template-columns: 2fr 1fr 0.85fr 1.45fr; gap: 6px; background: var(--lila); padding: 6px; }
 .tira img { width: 100%; height: clamp(160px, 22vw, 300px); object-fit: cover; border-radius: 3px; }
-@media (max-width: 760px) { .tira { grid-template-columns: 1fr 1fr; } .tira img { height: 170px; } }
+.tira.tira-libre { grid-template-columns: repeat(var(--n, 4), 1fr); }
+@media (max-width: 760px) { .tira, .tira.tira-libre { grid-template-columns: 1fr 1fr; } .tira img { height: 170px; } }
 
 /* ---------- Bloques ---------- */
 .banda { padding-block: clamp(56px, 8vw, 96px); }
@@ -248,6 +249,7 @@ a.tarjeta, .tarjeta a.cubre { text-decoration: none; color: inherit; }
 
 /* Galerías (mosaico con fotos completas) */
 .galeria { columns: 4 220px; column-gap: 12px; }
+.galeria.galeria-pocas { columns: var(--n) 220px; max-width: calc(var(--n) * 320px); margin-inline: auto; }
 .galeria button { padding: 0; border: 0; background: var(--lila); cursor: zoom-in; display: block; width: 100%; margin: 0 0 12px; break-inside: avoid; border-radius: 4px; overflow: hidden; }
 .galeria img { width: 100%; height: auto; transition: transform .4s, opacity .2s; }
 .galeria button:hover img { transform: scale(1.03); opacity: .92; }

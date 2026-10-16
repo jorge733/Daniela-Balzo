@@ -6,17 +6,32 @@
   let guardadas = leerCache();
 
   // Uso: <div class="galeria" data-galeria="vestuario" data-titulo="..."></div>
+  // Con data-forma="tira" son fotos sin visor (las del inicio); dentro de [data-si-hay-fotos],
+  // la sección entera se oculta si la galería no tiene fotos.
   // Las galerías que ya traen sus fotos (talleres, ver contenido.js) se dejan tal cual.
   function pintar() {
     document.querySelectorAll('[data-galeria]').forEach(el => {
       const nombre = el.dataset.galeria;
       const fotos = guardadas[nombre] || NM.GALERIAS[nombre];
       if (!fotos) return;
+      const seccion = el.closest('[data-si-hay-fotos]');
+      if (seccion) seccion.hidden = !fotos.length;
+      if (el.dataset.forma === 'tira') {
+        if (!guardadas[nombre]) return; // sin cambios queda la del HTML, con sus descripciones
+        const html = fotos.map(f => `<img src="${NM.esc(NM.foto(f))}" alt="">`).join('');
+        if (el.dataset.pintado !== html) { el.innerHTML = html; el.dataset.pintado = html; }
+        el.classList.toggle('tira-libre', fotos.length !== 4);
+        el.style.setProperty('--n', Math.min(fotos.length, 5));
+        return;
+      }
       const titulo = el.dataset.titulo || 'Foto';
       const html = fotos.map((f, i) =>
         `<button type="button" data-src="${NM.esc(NM.foto(f))}"><img src="${NM.esc(NM.foto(f))}" alt="${NM.esc(titulo)}, foto ${i + 1}" loading="lazy"></button>`).join('');
       // Solo se vuelve a dibujar si cambió algo, para no recargar las fotos.
       if (el.dataset.pintado !== html) { el.innerHTML = html; el.dataset.pintado = html; }
+      // Con pocas fotos, una columna por foto y centradas
+      el.classList.toggle('galeria-pocas', fotos.length > 0 && fotos.length < 4);
+      el.style.setProperty('--n', fotos.length);
     });
   }
   pintar();

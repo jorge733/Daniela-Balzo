@@ -732,11 +732,12 @@ function pintarPresencial(lista, c) {
       </section>
 
       <section class="paso">
-        <h3><span class="num">5</span> Fotos de la página <span class="contador">${c.fotos.length} de 3</span></h3>
-        <p class="ayuda-chica">Hasta 3 fotos, arriba de la descripción. Es opcional.</p>
+        <h3><span class="num">5</span> Fotos de la página <span class="contador">${c.fotos.length} ${c.fotos.length === 1 ? 'foto' : 'fotos'}</span></h3>
+        <p class="ayuda-chica">Las 3 primeras van arriba de la descripción; las demás, en una galería al final de la página. Puedes subir varias a la vez. Es opcional.</p>
         ${c.fotos.length ? `<ul class="fotos-lista">${c.fotos.map((f, k) => `<li><img src="${esc(fotoUrl(f))}" alt="Foto ${k + 1}">
           <button type="button" class="icono peligro" data-quitar-foto="${k}" aria-label="Quitar la foto ${k + 1}">${ICO.basura}</button></li>`).join('')}</ul>` : ''}
-        ${c.fotos.length < 3 ? `<label class="btn btn-borde subir-archivo">${ICO.foto} Subir una foto<input type="file" accept="image/*" id="subir-fotos" hidden></label>` : ''}
+        <label class="btn btn-borde subir-archivo">${ICO.foto} Subir fotos<input type="file" accept="image/*" multiple id="subir-fotos" hidden></label>
+        <div class="subida" id="subida-fotos" hidden><div class="progreso"><span></span></div><p></p></div>
       </section>
 
       <section class="paso">
@@ -840,7 +841,33 @@ function pintarPresencial(lista, c) {
   document.getElementById('subir-portada').onchange = (e) => conFoto(e.target, (url) => { c.imagen = url; }, 'Foto subida y guardada');
 
   // Fotos de la página
-  document.getElementById('subir-fotos')?.addEventListener('change', (e) => conFoto(e.target, (url) => { c.fotos.push(url); }, 'Foto subida y guardada'));
+  // Varias fotos a la vez, una tras otra, con su avance
+  document.getElementById('subir-fotos').onchange = async (e) => {
+    const archivos = [...e.target.files];
+    e.target.value = '';
+    if (!archivos.length || await esperarSubidaFoto()) return;
+    const caja = document.getElementById('subida-fotos');
+    const barra = caja.querySelector('.progreso span');
+    caja.hidden = false;
+    subiendo++;
+    const nuevas = [];
+    try {
+      for (const [n, archivo] of archivos.entries()) {
+        caja.querySelector('p').innerHTML = `<b>Subiendo foto ${n + 1} de ${archivos.length}…</b> No cierres esta página hasta que termine.`;
+        barra.style.width = Math.round(100 * n / archivos.length) + '%';
+        const url = await subirFotoPublica(archivo);
+        if (url) nuevas.push(url);
+      }
+    } catch (x) {
+      avisar('No se pudieron subir todas las fotos. Revisa tu internet y vuelve a intentarlo.', 'error');
+    }
+    subiendo = Math.max(0, subiendo - 1);
+    caja.hidden = true;
+    if (!nuevas.length) return;
+    leer();
+    c.fotos.push(...nuevas);
+    await guardarYRepintar(nuevas.length === 1 ? 'Foto subida y guardada' : `${nuevas.length} fotos subidas y guardadas`);
+  };
   f.querySelectorAll('[data-quitar-foto]').forEach(b => b.onclick = async () => {
     const k = Number(b.dataset.quitarFoto);
     if (!await confirmar({ titulo: '¿Quitar esta foto?', texto: 'La foto deja de verse en la página de la clase.', si: 'Sí, quitarla', no: 'No', peligro: true })) return;
@@ -1062,13 +1089,14 @@ const PAGINAS = [
     descripcion: 'La portada, las fotos, los recuadros y cada sección de la página principal.',
     grupos: [
       ['Portada', [['nombre', 'Tu nombre'], ['linea1', 'Lo que haces'], ['linea2', 'Segunda línea']]],
-      ['Las 4 fotos bajo la portada', [['inicio_tira1', 'Foto 1'], ['inicio_tira2', 'Foto 2'], ['inicio_tira3', 'Foto 3'], ['inicio_tira4', 'Foto 4']]],
+      ['Fotos bajo la portada', [['galeria:inicio-tira', '']]],
       ['Bienvenida', [['inicio_bienvenidaEtiqueta', 'Etiqueta chica'], ['inicio_bienvenidaTitulo', 'Título']]],
       recuadroInicio(1, 'Cursos'), recuadroInicio(2, 'Cursos online'), recuadroInicio(3, 'Portafolio'), recuadroInicio(4, 'Talleres realizados'),
       ['Quién soy (resumen)', [['inicio_qsFoto', 'Foto'], ['inicio_qsSaludo', 'Saludo'], ['inicio_qsTitulo', 'Título'], ['inicio_qsTexto', 'Texto']]],
       ['Cursos permanentes', [['inicio_cursosEtiqueta', 'Etiqueta chica'], ['cursosTitulo', 'Título'], ['cursosTexto', 'Texto bajo el título', 'Las tarjetas de abajo son tus clases: se cambian en <a href="#presenciales">Clases presenciales</a>.']]],
       ['Cursos online', [['inicio_onlineEtiqueta', 'Etiqueta chica'], ['onlineTitulo', 'Título', 'También es el título de la página Cursos online.'], ['onlineTexto', 'Texto bajo el título']]],
       ['Talleres en instituciones', [['inicio_instTitulo', 'Título'], ['inicio_instTexto', 'Texto'], ['inicio_instLista', 'Instituciones']]],
+      ['Más fotos (opcional)', [['inicio_galeriaTitulo', 'Título de la sección', 'Si no subes fotos, esta sección no se muestra.'], ['galeria:inicio', '']]],
       ['Recuadro morado del final', [['inicio_ctaEtiqueta', 'Etiqueta chica'], ['inicio_ctaTitulo', 'Título'], ['inicio_ctaTexto', 'Texto']]]
     ] },
   { id: 'quien-soy', nombre: 'Quién soy', archivo: 'quien-soy', icono: ICO.persona,
@@ -1076,6 +1104,7 @@ const PAGINAS = [
     grupos: [
       ['Presentación', [['qs_foto', 'Foto'], ['qs_saludo', 'Saludo'], ['qs_titulo', 'Título'], ['qs_texto', 'Texto']]],
       ['Tu experiencia', [['qs_experienciaTitulo', 'Título'], ['qs_experiencia', 'Línea de tiempo']]],
+      ['Más fotos (opcional)', [['qs_galeriaTitulo', 'Título de la sección', 'Si no subes fotos, esta sección no se muestra.'], ['galeria:quien-soy', '']]],
       ['Abajo', [['qs_ctaTitulo', 'Frase final']]]
     ] },
   { id: 'cursos', nombre: 'Cursos', archivo: 'cursos', icono: ICO.presencial,
@@ -1083,7 +1112,8 @@ const PAGINAS = [
     grupos: [
       ['Arriba de la página', [['cursos_etiqueta', 'Etiqueta chica'], ['cursos_titulo', 'Título'], ['cursos_texto', 'Texto'], ['cursos_foto', 'Foto']]],
       ['Tarjeta de los cursos en video', [['cursos_videoFoto', 'Foto'], ['cursos_videoEtiqueta', 'Etiqueta chica'], ['cursos_videoTitulo', 'Título'],
-        ['cursos_videoTexto', 'Texto', 'Va al final, después de tus clases. Las demás tarjetas se cambian en <a href="#presenciales">Clases presenciales</a>.']]]
+        ['cursos_videoTexto', 'Texto', 'Va al final, después de tus clases. Las demás tarjetas se cambian en <a href="#presenciales">Clases presenciales</a>.']]],
+      ['Más fotos (opcional)', [['cursos_galeriaTitulo', 'Título de la sección', 'Si no subes fotos, esta sección no se muestra.'], ['galeria:cursos', '']]]
     ] },
   { id: 'cursos-online', nombre: 'Cursos online', archivo: 'cursos-online', icono: ICO.cursos,
     descripcion: 'El texto de arriba y los 3 pasos de "¿Cómo funciona?".',
@@ -1095,12 +1125,14 @@ const PAGINAS = [
   { id: 'contacto', nombre: 'Contacto', archivo: 'contacto', icono: ICO.contacto,
     descripcion: 'El título y el texto de la página de contacto.',
     grupos: [
-      ['Textos', [['contacto_etiqueta', 'Etiqueta chica'], ['contacto_titulo', 'Título'], ['contacto_texto', 'Texto', 'Tu correo, teléfono y dirección se cambian en <a href="#pagina/datos">Mis datos de contacto</a>.'], ['contacto_formTitulo', 'Título del formulario']]]
+      ['Textos', [['contacto_etiqueta', 'Etiqueta chica'], ['contacto_titulo', 'Título'], ['contacto_texto', 'Texto', 'Tu correo, teléfono y dirección se cambian en <a href="#pagina/datos">Mis datos de contacto</a>.'], ['contacto_formTitulo', 'Título del formulario']]],
+      ['Más fotos (opcional)', [['contacto_galeriaTitulo', 'Título de la sección', 'Si no subes fotos, esta sección no se muestra.'], ['galeria:contacto', '']]]
     ] },
   { id: 'patrones', nombre: 'Patrones', archivo: 'patrones', icono: ICO.pdf,
     descripcion: 'El texto de la página de patrones.',
     grupos: [
-      ['Textos', [['patrones_etiqueta', 'Etiqueta chica'], ['patrones_titulo', 'Título'], ['patrones_texto', 'Texto'], ['patrones_ctaTitulo', 'Frase final']]]
+      ['Textos', [['patrones_etiqueta', 'Etiqueta chica'], ['patrones_titulo', 'Título'], ['patrones_texto', 'Texto'], ['patrones_ctaTitulo', 'Frase final']]],
+      ['Más fotos (opcional)', [['patrones_galeriaTitulo', 'Título de la sección', 'Si no subes fotos, esta sección no se muestra.'], ['galeria:patrones', '']]]
     ] },
   { id: 'talleres', nombre: 'Talleres realizados (textos)', archivo: 'talleres', icono: ICO.talleres,
     descripcion: 'El texto de arriba de la página. Los talleres y sus fotos están en Talleres realizados.',
@@ -1300,9 +1332,10 @@ function pintarPagina(pag, guardados, orig, gals) {
 
 function editorGaleria(caja, nombre, gals) {
   const cambiada = !!gals[nombre];
+  const originales = NM.GALERIAS[nombre] || [];
   const lista = [...(gals[nombre] || NM.GALERIAS[nombre] || [])];
   caja.innerHTML = `
-    <p class="ayuda-chica">Aparecen en tu página en este orden. Con las flechas las mueves; las fotos nuevas quedan al principio. Todo se guarda solo.</p>
+    <p class="ayuda-chica">${lista.length ? 'Aparecen en tu página en este orden. Con las flechas las mueves; las fotos nuevas quedan al principio.' : 'Todavía no hay fotos aquí. Sube las que quieras.'} Todo se guarda solo.</p>
     <p class="etiqueta-campo">Fotos <span class="contador">${lista.length}</span></p>
     <ul class="fotos-lista galeria-editar">${lista.map((f, j) => `<li><img src="${esc(NM.foto(f))}" alt="Foto ${j + 1}" loading="lazy">
       <span class="foto-num">${j + 1}</span>
@@ -1313,7 +1346,7 @@ function editorGaleria(caja, nombre, gals) {
       </div></li>`).join('')}</ul>
     <div class="botones-fila">
       <label class="btn subir-archivo">${ICO.subir} Subir fotos<input type="file" accept="image/*" multiple data-subir-galeria hidden></label>
-      ${cambiada ? '<button type="button" class="btn btn-borde" data-restaurar>Volver a las fotos originales</button>' : ''}
+      ${cambiada && (lista.length || originales.length) ? `<button type="button" class="btn btn-borde" data-restaurar>${originales.length ? 'Volver a las fotos originales' : 'Quitar todas las fotos'}</button>` : ''}
     </div>
     <div class="subida" hidden><div class="progreso"><span></span></div><p></p></div>`;
 
@@ -1340,14 +1373,17 @@ function editorGaleria(caja, nombre, gals) {
   caja.querySelectorAll('[data-quitar]').forEach(b => b.onclick = async () => {
     if (await esperarSubidaFoto()) return;
     const j = Number(b.dataset.quitar);
-    if (!await confirmar({ titulo: `¿Quitar la foto ${j + 1}?`, texto: 'La foto deja de verse en tu portafolio.', si: 'Sí, quitarla', no: 'No', peligro: true })) return;
+    if (!await confirmar({ titulo: `¿Quitar la foto ${j + 1}?`, texto: 'La foto deja de verse en tu página.', si: 'Sí, quitarla', no: 'No', peligro: true })) return;
     const [quitada] = lista.splice(j, 1);
     if (await guardar(lista, 'Foto quitada')) borrarFotoSubida(quitada);
   });
   caja.querySelector('[data-restaurar]')?.addEventListener('click', async () => {
     if (await esperarSubidaFoto()) return;
-    if (!await confirmar({ titulo: '¿Volver a las fotos originales?', texto: 'Se quitan las fotos que subiste y vuelven las de antes, en su orden original. Esto no se puede deshacer.', si: 'Sí, volver a las originales', no: 'No', peligro: true })) return;
-    if (await guardar(null, 'Volvieron las fotos originales')) lista.forEach(borrarFotoSubida);
+    const ok = originales.length
+      ? await confirmar({ titulo: '¿Volver a las fotos originales?', texto: 'Se quitan las fotos que subiste y vuelven las de antes, en su orden original. Esto no se puede deshacer.', si: 'Sí, volver a las originales', no: 'No', peligro: true })
+      : await confirmar({ titulo: '¿Quitar todas las fotos?', texto: 'Se quitan todas las fotos de esta sección y deja de mostrarse en tu página. Esto no se puede deshacer.', si: 'Sí, quitarlas', no: 'No', peligro: true });
+    if (!ok) return;
+    if (await guardar(null, originales.length ? 'Volvieron las fotos originales' : 'Fotos quitadas')) lista.forEach(borrarFotoSubida);
   });
 
   // Varias fotos a la vez, una tras otra, con su avance

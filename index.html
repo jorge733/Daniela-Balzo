@@ -45,11 +45,11 @@
   </section>
 
 
-  <div class="tira">
-    <img data-texto="inicio_tira1" data-tipo="foto" src="assets/img/inicio-01.jpg" alt="Daniela en su taller, junto a los hilos">
-    <img data-texto="inicio_tira2" data-tipo="foto" src="assets/img/inicio-02.jpg" alt="Clases de costura a pasos del metro Francisco Bilbao">
-    <img data-texto="inicio_tira3" data-tipo="foto" src="assets/img/inicio-03.jpg" alt="Ilustración textil">
-    <img data-texto="inicio_tira4" data-tipo="foto" src="assets/img/inicio-04.jpg" alt="Taller de costura con máquinas">
+  <div class="tira" data-galeria="inicio-tira" data-forma="tira">
+    <img src="assets/img/inicio-01.jpg" alt="Daniela en su taller, junto a los hilos">
+    <img src="assets/img/inicio-02.jpg" alt="Clases de costura a pasos del metro Francisco Bilbao">
+    <img src="assets/img/inicio-03.jpg" alt="Ilustración textil">
+    <img src="assets/img/inicio-04.jpg" alt="Taller de costura con máquinas">
   </div>
 
   <section class="banda secciones-inicio">
@@ -149,6 +149,13 @@
     </div>
   </section>
 
+  <section class="banda" data-si-hay-fotos hidden>
+    <div class="wrap">
+      <div class="encabezado-seccion centro"><h2 class="hilo" data-texto="inicio_galeriaTitulo">Fotos del taller</h2></div>
+      <div class="galeria" data-galeria="inicio" data-titulo="Fotos del taller"></div>
+    </div>
+  </section>
+
   <section class="banda banda-morada centro">
     <div class="wrap angosto">
       <span class="etiqueta" data-texto="inicio_ctaEtiqueta">¿Tienes un proyecto en mente?</span>
@@ -164,6 +171,7 @@
 <script src="assets/js/datos.js"></script>
 <script src="assets/js/contenido.js"></script>
 <script src="assets/js/layout.js"></script>
+<script src="assets/js/galerias.js"></script>
 <script type="module">
   import { cursosPublicados } from "./assets/js/publico.js";
   const cursos = (await cursosPublicados()).slice(0, 3);
