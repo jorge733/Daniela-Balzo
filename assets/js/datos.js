@@ -5,23 +5,37 @@ const NM = (() => {
   // Mientras sea true, el sitio muestra el aviso de sitio en construcción.
   const MODO_PRUEBA = true;
 
-  const CONTACTO = {
-    correo: 'moradenegro@gmail.com',
-    telefono: '+56 9 3370 1311',
-    whatsapp: '56933701311',
-    instagram: 'moradenegro'
-  };
-
-  // Textos que Daniela puede cambiar desde el panel. Estos son los valores por defecto.
+  // Textos que Daniela puede cambiar desde el panel (sitio/textos). Estos son los valores por defecto
+  // de los que arma layout.js; los demás textos de cada página tienen su valor original en el HTML,
+  // marcados con data-texto (ver ponerTextos).
   const TEXTOS = {
     nombre: 'Daniela Balzo',
+    marca: 'Negra Mora · Clases de costura',
     linea1: 'Diseñadora gráfica y de vestuario / Arteterapeuta',
     linea2: 'Clases de Costura personalizadas desde 2012',
     cursosTitulo: 'Cursos permanentes',
     cursosTexto: 'Entérate de toda la información de los cursos disponibles',
     onlineTitulo: 'Cursos online',
-    onlineTexto: 'Aprende a coser a tu ritmo, desde tu casa, con clases en video que puedes ver cuando quieras.'
+    onlineTexto: 'Aprende a coser a tu ritmo, desde tu casa, con clases en video que puedes ver cuando quieras.',
+    correo: 'moradenegro@gmail.com',
+    telefono: '+56 9 3370 1311',
+    instagram: 'moradenegro',
+    direccion: 'La Reina, a pasos del metro Francisco Bilbao (L4)'
   };
+
+  let guardados = {};
+  try { guardados = JSON.parse(sessionStorage.getItem('nm_textos') || '{}'); } catch (e) {}
+
+  // Teléfono para wa.me: "+56 9 3370 1311" -> "56933701311" (un celular de 9 dígitos sin +56 también sirve)
+  const numeroWhatsapp = (tel) => { const n = String(tel || '').replace(/\D/g, ''); return n.length === 9 ? '56' + n : n; };
+  const contactoDe = (t) => ({
+    correo: t.correo,
+    telefono: t.telefono,
+    whatsapp: numeroWhatsapp(t.telefono),
+    instagram: String(t.instagram || '').replace(/^@/, '')
+  });
+  // Se actualiza en el mismo objeto cuando llegan los textos guardados, así todos ven el valor nuevo.
+  const CONTACTO = contactoDe({ ...TEXTOS, ...guardados });
 
   // Clases presenciales y talleres originales (lo editado en el panel vive en Firestore, ver contenido.js).
   // El servidor también lee este archivo para cobrar el precio correcto mientras no haya nada guardado.
@@ -113,8 +127,84 @@ const NM = (() => {
   ];
   const posNivel = (c) => Math.max(0, NIVELES.findIndex(n => n.id === c.nivel));
 
-  let guardados = {};
-  try { guardados = JSON.parse(sessionStorage.getItem('nm_textos') || '{}'); } catch (e) {}
+  // Galerías del portafolio originales (lo editado en el panel vive en sitio/galerias, ver galerias.js)
+  const serie = (nombre, ...n) => n.map(x => `${nombre}-${String(x).padStart(2, '0')}.jpg`);
+  const desde = (nombre, a, b) => serie(nombre, ...Array.from({ length: b - a + 1 }, (_, i) => a + i));
+  const GALERIAS = {
+    'vestuario': [...desde('vestuario', 39, 45), ...desde('vestuario', 1, 16), 'cursos-02.jpg', ...desde('vestuario', 18, 38)],
+    'accesorios': [...desde('accesorios', 23, 30), ...desde('accesorios', 1, 8), 'cursos-07.jpg', ...desde('accesorios', 10, 22)],
+    'ilustracion-textil': ['inicio-03.jpg', ...desde('ilustracion-textil', 2, 14)],
+    'arte-terapia': desde('arte-terapia', 1, 16)
+  };
+
+  // ---------- Textos editables en las páginas ----------
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  /** Texto con *negritas*, ya escapado. */
+  const fmt = (s) => esc(s).replace(/\*([^*\n]+)\*/g, '<strong>$1</strong>');
+  const lineas = (s) => String(s || '').split('\n').map(l => l.trim()).filter(Boolean);
+  /** Foto del sitio ("cursos-02.jpg") o subida desde el panel (https://…). */
+  const foto = (f) => /^https?:/.test(f || '') ? f : 'assets/img/' + (f || 'cursos-05.jpg');
+
+  // Cómo se dibuja cada tipo de texto (data-tipo). Sin tipo, es texto simple.
+  const DIBUJAR = {
+    parrafos: (v) => String(v).split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).map(p => `<p>${fmt(p).replace(/\n/g, '<br>')}</p>`).join(''),
+    lista: (v) => lineas(v).map(l => `<li>${fmt(l)}</li>`).join(''),
+    // "2012: Creé mi marca…" -> año en negrita y texto al lado
+    'linea-tiempo': (v) => lineas(v).map(l => {
+      const i = l.indexOf(':');
+      return i > 0 ? `<li><b>${esc(l.slice(0, i).trim())}</b><span>${fmt(l.slice(i + 1).trim())}</span></li>` : `<li><span>${fmt(l)}</span></li>`;
+    }).join('')
+  };
+
+  /** Pone los textos y fotos guardados en los elementos con data-texto (los demás quedan como en el HTML). */
+  function ponerTextos(raiz = document) {
+    const t = { ...TEXTOS, ...guardados };
+    raiz.querySelectorAll('[data-texto]').forEach(el => {
+      const v = t[el.dataset.texto];
+      if (!v) return;
+      const tipo = el.dataset.tipo;
+      if (tipo === 'foto') { if (el.getAttribute('src') !== foto(v)) el.src = foto(v); return; }
+      if (DIBUJAR[tipo]) { const html = DIBUJAR[tipo](v); if (el.dataset.puesto !== html) { el.innerHTML = html; el.dataset.puesto = html; } return; }
+      if (el.textContent !== v) el.textContent = v;
+    });
+  }
+
+  // Cambia el correo, el teléfono y el Instagram en enlaces y textos que vienen escritos en el HTML.
+  function cambiarContacto(antes, ahora) {
+    document.querySelectorAll('a[href]').forEach(a => {
+      const h = a.getAttribute('href');
+      let n = h;
+      if (/wa\.me\/\d+/.test(h)) n = h.replace(/wa\.me\/\d+/, 'wa.me/' + ahora.whatsapp);
+      else if (h.startsWith('mailto:')) n = 'mailto:' + ahora.correo;
+      else if (/instagram\.com\//.test(h)) n = 'https://instagram.com/' + ahora.instagram;
+      if (n !== h) a.setAttribute('href', n);
+    });
+    const cambios = [[antes.correo, ahora.correo], [antes.telefono, ahora.telefono], ['@' + antes.instagram, '@' + ahora.instagram]]
+      .filter(([a, b]) => a && b && a !== b);
+    if (!cambios.length) return;
+    const nodos = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let n = nodos.nextNode(); n; n = nodos.nextNode()) {
+      let v = n.nodeValue;
+      cambios.forEach(([a, b]) => { v = v.split(a).join(b); });
+      if (v !== n.nodeValue) n.nodeValue = v;
+    }
+  }
+
+  /** Llegaron los textos guardados en Firestore: se usan desde ya y se repintan. */
+  function actualizarTextos(nuevos) {
+    guardados = nuevos;
+    try { sessionStorage.setItem('nm_textos', JSON.stringify(nuevos)); } catch (e) {}
+    const antes = { ...CONTACTO };
+    Object.assign(CONTACTO, contactoDe({ ...TEXTOS, ...guardados }));
+    cambiarContacto(antes, CONTACTO);
+    ponerTextos();
+  }
+
+  /** Al cargar la página: lo escrito en el HTML trae el contacto original. */
+  function prepararTextos() {
+    cambiarContacto(contactoDe(TEXTOS), CONTACTO);
+    ponerTextos();
+  }
 
   return {
     MODO_PRUEBA,
@@ -123,6 +213,14 @@ const NM = (() => {
     NIVELES,
     PRESENCIALES,
     TALLERES,
+    GALERIAS,
+    contactoDe,
+    numeroWhatsapp,
+    ponerTextos,
+    prepararTextos,
+    actualizarTextos,
+    fmt,
+    foto,
     /** Nivel de un curso (los cursos sin nivel cuentan como básicos). */
     nivel: (c) => NIVELES[posNivel(c)],
     /** Ordena cursos de lo más simple a lo más complejo y luego por el orden del panel. */
@@ -131,6 +229,6 @@ const NM = (() => {
     /** Foto de un curso: una de las fotos del sitio o una subida desde el panel. */
     imagen: (c) => /^https?:/.test(c.imagen || '') ? c.imagen : 'assets/img/' + (c.imagen || 'cursos-05.jpg'),
     clp: (n) => '$' + Number(n || 0).toLocaleString('es-CL'),
-    esc: (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+    esc
   };
 })();

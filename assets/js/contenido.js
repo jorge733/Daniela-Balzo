@@ -50,14 +50,14 @@ const NMC = (() => {
       </div>
     </article>`;
 
-  // Tarjeta fija de los cursos en video, al final de la página de cursos
+  // Tarjeta fija de los cursos en video, al final de la página de cursos (sus textos se cambian en el panel)
   const TARJETA_VIDEO = `
     <article class="tarjeta">
-      <img src="assets/img/cursos-05.jpg" alt="" loading="lazy">
+      <img src="assets/img/cursos-05.jpg" alt="" loading="lazy" data-texto="cursos_videoFoto" data-tipo="foto">
       <div class="cuerpo">
-        <span class="modalidad">Online en video</span>
-        <h3>Cursos online en video</h3>
-        <p>Aprende a tu ritmo, desde tu casa: uso y manejo de máquina, ropa interior, bolsos y más. Compras el curso una vez y ves las clases cuando quieras.</p>
+        <span class="modalidad" data-texto="cursos_videoEtiqueta">Online en video</span>
+        <h3 data-texto="cursos_videoTitulo">Cursos online en video</h3>
+        <p data-texto="cursos_videoTexto">Aprende a tu ritmo, desde tu casa: uso y manejo de máquina, ropa interior, bolsos y más. Compras el curso una vez y ves las clases cuando quieras.</p>
         <div class="pie-tarjeta"><a class="btn btn-chico" href="cursos-online">Ver cursos en video</a></div>
       </div>
     </article>`;
@@ -137,7 +137,7 @@ const NMC = (() => {
   };
 
   // Solo se vuelve a dibujar si cambió algo, para no recargar las fotos.
-  const poner = (el, html) => { if (el.dataset.pintado !== html) { el.innerHTML = html; el.dataset.pintado = html; } };
+  const poner = (el, html) => { if (el.dataset.pintado !== html) { el.innerHTML = html; el.dataset.pintado = html; NM.ponerTextos(el); } };
 
   function pintar() {
     document.querySelectorAll('[data-presenciales="inicio"]').forEach(el => poner(el, visibles().map(tarjetaInicio).join('')));

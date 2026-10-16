@@ -30,9 +30,9 @@
   <section class="banda banda-lila">
     <div class="wrap dos">
       <div>
-        <span class="etiqueta">Conversemos</span>
-        <h1 class="hilo">Contacto</h1>
-        <p>¿Quieres inscribirte, cotizar un taller o tienes dudas sobre qué curso tomar? Escríbeme y te respondo a la brevedad.</p>
+        <span class="etiqueta" data-texto="contacto_etiqueta">Conversemos</span>
+        <h1 class="hilo" data-texto="contacto_titulo">Contacto</h1>
+        <p data-texto="contacto_texto">¿Quieres inscribirte, cotizar un taller o tienes dudas sobre qué curso tomar? Escríbeme y te respondo a la brevedad.</p>
         <ul class="contacto-lista">
           <li><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span>
             <span><small>Correo</small><a href="mailto:moradenegro@gmail.com">moradenegro@gmail.com</a></span></li>
@@ -41,11 +41,11 @@
           <li><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor"/></svg></span>
             <span><small>Instagram</small><a href="https://instagram.com/moradenegro" target="_blank" rel="noopener">@moradenegro</a></span></li>
           <li><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
-            <span><small>Taller</small>La Reina, a pasos del metro Francisco Bilbao (L4)</span></li>
+            <span><small>Taller</small><span data-texto="direccion">La Reina, a pasos del metro Francisco Bilbao (L4)</span></span></li>
         </ul>
       </div>
       <form class="form caja-form" id="form-contacto">
-        <h2 style="font-size: 1.6rem; margin: 0">Envíame un mensaje</h2>
+        <h2 style="font-size: 1.6rem; margin: 0" data-texto="contacto_formTitulo">Envíame un mensaje</h2>
         <label>Nombre<input id="c-nombre" name="nombre" required autocomplete="name"></label>
         <label>Correo<input id="c-correo" name="correo" type="email" required autocomplete="email"></label>
         <label>¿Sobre qué quieres consultar?

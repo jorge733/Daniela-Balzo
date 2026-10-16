@@ -1,26 +1,42 @@
-/* Galerías de fotos con visor ampliado. */
-const GALERIAS = {
-  'vestuario': ['vestuario-39', 'vestuario-40', 'vestuario-41', 'vestuario-42', 'vestuario-43', 'vestuario-44', 'vestuario-45', 'vestuario-01', 'vestuario-02', 'vestuario-03', 'vestuario-04', 'vestuario-05', 'vestuario-06', 'vestuario-07', 'vestuario-08', 'vestuario-09', 'vestuario-10', 'vestuario-11', 'vestuario-12', 'vestuario-13', 'vestuario-14', 'vestuario-15', 'vestuario-16', 'cursos-02', 'vestuario-18', 'vestuario-19', 'vestuario-20', 'vestuario-21', 'vestuario-22', 'vestuario-23', 'vestuario-24', 'vestuario-25', 'vestuario-26', 'vestuario-27', 'vestuario-28', 'vestuario-29', 'vestuario-30', 'vestuario-31', 'vestuario-32', 'vestuario-33', 'vestuario-34', 'vestuario-35', 'vestuario-36', 'vestuario-37', 'vestuario-38'],
-  'accesorios': ['accesorios-23', 'accesorios-24', 'accesorios-25', 'accesorios-26', 'accesorios-27', 'accesorios-28', 'accesorios-29', 'accesorios-30', 'accesorios-01', 'accesorios-02', 'accesorios-03', 'accesorios-04', 'accesorios-05', 'accesorios-06', 'accesorios-07', 'accesorios-08', 'cursos-07', 'accesorios-10', 'accesorios-11', 'accesorios-12', 'accesorios-13', 'accesorios-14', 'accesorios-15', 'accesorios-16', 'accesorios-17', 'accesorios-18', 'accesorios-19', 'accesorios-20', 'accesorios-21', 'accesorios-22'],
-  'ilustracion-textil': ['inicio-03', 'ilustracion-textil-02', 'ilustracion-textil-03', 'ilustracion-textil-04', 'ilustracion-textil-05', 'ilustracion-textil-06', 'ilustracion-textil-07', 'ilustracion-textil-08', 'ilustracion-textil-09', 'ilustracion-textil-10', 'ilustracion-textil-11', 'ilustracion-textil-12', 'ilustracion-textil-13', 'ilustracion-textil-14'],
-  'arte-terapia': ['arte-terapia-01', 'arte-terapia-02', 'arte-terapia-03', 'arte-terapia-04', 'arte-terapia-05', 'arte-terapia-06', 'arte-terapia-07', 'arte-terapia-08', 'arte-terapia-09', 'arte-terapia-10', 'arte-terapia-11', 'arte-terapia-12', 'arte-terapia-13', 'arte-terapia-14', 'arte-terapia-15', 'arte-terapia-16'],
-  'talleres': ['talleres-01', 'talleres-02', 'talleres-03', 'talleres-04', 'talleres-05', 'talleres-19', 'talleres-06', 'talleres-07', 'talleres-08', 'talleres-09', 'talleres-10', 'talleres-11', 'talleres-29', 'talleres-30', 'talleres-12', 'talleres-13', 'talleres-14', 'talleres-15', 'talleres-17', 'talleres-16', 'talleres-22', 'talleres-18', 'talleres-23', 'talleres-24', 'talleres-25', 'talleres-26', 'talleres-27', 'talleres-28']
-};
-
+/* Galerías de fotos con visor ampliado.
+   Las fotos originales del portafolio están en datos.js (NM.GALERIAS); lo que Daniela cambia
+   desde el panel vive en Firestore (sitio/galerias) y se lee con la API REST, igual que los textos. */
 (() => {
-  const ruta = (f) => 'assets/img/' + f + '.jpg';
+  const leerCache = () => { try { return JSON.parse(sessionStorage.getItem('nm_galerias') || 'null') || {}; } catch (e) { return {}; } };
+  let guardadas = leerCache();
 
-  // Uso: <div class="galeria" data-galeria="talleres" data-desde="1" data-hasta="5" data-titulo="..."></div>
+  // Uso: <div class="galeria" data-galeria="vestuario" data-titulo="..."></div>
   // Las galerías que ya traen sus fotos (talleres, ver contenido.js) se dejan tal cual.
-  document.querySelectorAll('[data-galeria]').forEach(el => {
-    const fotos = GALERIAS[el.dataset.galeria];
-    if (!fotos) return;
-    const desde = Number(el.dataset.desde || 1) - 1;
-    const hasta = Number(el.dataset.hasta || fotos.length);
-    const titulo = el.dataset.titulo || 'Foto';
-    el.innerHTML = fotos.slice(desde, hasta).map((f, i) =>
-      `<button type="button" data-src="${ruta(f)}"><img src="${ruta(f)}" alt="${titulo}, foto ${i + 1}" loading="lazy"></button>`).join('');
-  });
+  function pintar() {
+    document.querySelectorAll('[data-galeria]').forEach(el => {
+      const nombre = el.dataset.galeria;
+      const fotos = guardadas[nombre] || NM.GALERIAS[nombre];
+      if (!fotos) return;
+      const titulo = el.dataset.titulo || 'Foto';
+      const html = fotos.map((f, i) =>
+        `<button type="button" data-src="${NM.esc(NM.foto(f))}"><img src="${NM.esc(NM.foto(f))}" alt="${NM.esc(titulo)}, foto ${i + 1}" loading="lazy"></button>`).join('');
+      // Solo se vuelve a dibujar si cambió algo, para no recargar las fotos.
+      if (el.dataset.pintado !== html) { el.innerHTML = html; el.dataset.pintado = html; }
+    });
+  }
+  pintar();
+
+  const script = document.currentScript;
+  if (document.querySelector('[data-galeria]:not([data-galeria="propia"])')) {
+    import(new URL('config.js', script.src)).then(async ({ FIREBASE, EMULADORES }) => {
+      const base = EMULADORES ? 'http://127.0.0.1:8080' : 'https://firestore.googleapis.com';
+      const r = await fetch(`${base}/v1/projects/${FIREBASE.projectId}/databases/(default)/documents/sitio/galerias`);
+      const campos = r.ok ? (await r.json()).fields || {} : {};
+      const nuevas = {};
+      Object.keys(campos).forEach(k => {
+        const lista = campos[k].arrayValue;
+        if (lista) nuevas[k] = (lista.values || []).map(v => v.stringValue).filter(Boolean);
+      });
+      guardadas = nuevas;
+      try { sessionStorage.setItem('nm_galerias', JSON.stringify(nuevas)); } catch (e) {}
+      pintar();
+    }).catch(() => {});
+  }
 
   const visor = document.createElement('div');
   visor.className = 'visor';

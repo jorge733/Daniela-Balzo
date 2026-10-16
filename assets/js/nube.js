@@ -7,7 +7,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 import {
   getFirestore, connectFirestoreEmulator, doc, getDoc, getDocs, setDoc, deleteDoc,
-  collection, query, where, orderBy, limit, serverTimestamp, getCountFromServer
+  collection, query, where, orderBy, limit, serverTimestamp, getCountFromServer, deleteField
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import {
   getStorage, connectStorageEmulator, ref, uploadBytesResumable, getDownloadURL, deleteObject
@@ -72,7 +72,18 @@ export async function textos() {
     return d.exists() ? d.data() : {};
   } catch (e) { return {}; }
 }
-export const guardarTextos = (t) => setDoc(doc(db, 'sitio', 'textos'), t, { merge: true });
+/** Guarda los textos cambiados; los de "quitar" vuelven a su valor original. */
+export const guardarTextos = (t, quitar = []) =>
+  setDoc(doc(db, 'sitio', 'textos'), { ...t, ...Object.fromEntries(quitar.map(k => [k, deleteField()])) }, { merge: true });
+
+/** Fotos de las galerías del portafolio cambiadas desde el panel: { vestuario: [...], ... } */
+export async function galerias() {
+  const d = await getDoc(doc(db, 'sitio', 'galerias'));
+  return d.exists() ? d.data() : {};
+}
+/** Guarda las fotos de una galería (null la deja con sus fotos originales). */
+export const guardarGaleria = (nombre, lista) =>
+  setDoc(doc(db, 'sitio', 'galerias'), { [nombre]: lista || deleteField() }, { merge: true });
 
 /** Clases presenciales o talleres guardados desde el panel (null si nunca se guardaron). */
 export async function contenido(nombre) {

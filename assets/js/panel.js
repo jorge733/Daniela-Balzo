@@ -1,7 +1,7 @@
 /* Panel privado de Daniela.
    Pensado para usarse sin conocimientos técnicos: una cosa a la vez, palabras simples,
    botones grandes y confirmación antes de borrar.
-   Secciones: #inicio, #cursos, #curso/<id>, #presenciales, #presencial/<id>, #talleres, #textos, #ventas */
+   Secciones: #inicio, #cursos, #curso/<id>, #presenciales, #presencial/<id>, #talleres, #paginas, #pagina/<id>, #ventas */
 import * as nube from './nube.js';
 
 const { esc, clp } = NM;
@@ -29,6 +29,11 @@ const ICO = {
   basura: svg('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'),
   arriba: svg('<path d="m6 15 6-6 6 6"/>'),
   abajo: svg('<path d="m6 9 6 6 6-6"/>'),
+  izquierda: svg('<path d="m15 18-6-6 6-6"/>'),
+  derecha: svg('<path d="m9 18 6-6-6-6"/>'),
+  paginas: svg('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>'),
+  contacto: svg('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>'),
+  persona: svg('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>'),
   pdf: svg('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>'),
   foto: svg('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>'),
   ayuda: svg('<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17v.01"/>')
@@ -114,7 +119,7 @@ const SECCIONES = [
   ['cursos', 'Cursos online', ICO.cursos],
   ['presenciales', 'Clases presenciales', ICO.presencial],
   ['talleres', 'Talleres realizados', ICO.talleres],
-  ['textos', 'Textos de mi página', ICO.textos],
+  ['paginas', 'Mis páginas', ICO.paginas],
   ['ventas', 'Mis ventas', ICO.ventas]
 ];
 
@@ -223,7 +228,7 @@ async function inicio() {
       <a class="accion" href="#cursos">${ICO.cursos}<b>Ver o cambiar mis cursos</b><span>Subir videos, cambiar precios o fotos.</span></a>
       <a class="accion" href="#presenciales">${ICO.presencial}<b>Cambiar mis clases presenciales</b><span>Precios, horarios, textos y fotos.</span></a>
       <a class="accion" href="#talleres">${ICO.talleres}<b>Cambiar mis talleres realizados</b><span>Agregar un taller, sus textos y sus fotos.</span></a>
-      <a class="accion" href="#textos">${ICO.textos}<b>Cambiar textos de mi página</b><span>Tu nombre, tu descripción y los títulos.</span></a>
+      <a class="accion" href="#paginas">${ICO.paginas}<b>Cambiar mis páginas</b><span>Textos y fotos de cada página, tu portafolio y tus datos de contacto.</span></a>
       <a class="accion" href="#ventas">${ICO.ventas}<b>Ver mis ventas</b><span>Quién compró, qué curso y cuándo.</span></a>
     </div>`);
   document.getElementById('accion-nuevo').onclick = crearCurso;
@@ -1014,59 +1019,361 @@ function pintarTalleres(lista) {
   });
 }
 
-// ---------- Textos ----------
-const GRUPOS_TEXTOS = [
-  ['Arriba en todas las páginas y en el pie', [
-    ['nombre', 'Tu nombre', 'Aparece en grande en la portada y arriba a la izquierda.'],
-    ['linea1', 'Lo que haces', 'La primera línea bajo tu nombre en la portada.'],
-    ['linea2', 'Segunda línea', 'La línea que va justo debajo.']
-  ]],
-  ['En la página de inicio', [
-    ['cursosTitulo', 'Título de la sección de cursos', ''],
-    ['cursosTexto', 'Texto bajo ese título', '']
-  ]],
-  ['En la sección de cursos online', [
-    ['onlineTitulo', 'Título', 'Se ve en el inicio y en la página de cursos online.'],
-    ['onlineTexto', 'Texto bajo el título', '']
-  ]]
+// ---------- Mis páginas ----------
+// Textos y fotos de cada página. En el HTML van marcados con data-texto (y data-tipo si no son
+// texto simple); el valor original se lee de ese mismo HTML, así no se repite aquí.
+// Cada campo: [clave, etiqueta, ayuda]. "galeria:<nombre>" es una galería de fotos del portafolio.
+const NEGRITA = 'Lo que pongas entre *asteriscos* sale en <b>negrita</b>.';
+const AYUDA_TIPO = {
+  parrafos: 'Deja una línea en blanco para separar párrafos. ' + NEGRITA,
+  lista: 'Uno por línea.',
+  'linea-tiempo': 'Uno por línea: el año, dos puntos y lo que pasó. Ej: <b>2012: Creé mi marca Negra Mora.</b>'
+};
+const recuadroInicio = (n, lleva) => [`Recuadro ${n} (lleva a ${lleva})`, [
+  [`inicio_s${n}Foto`, 'Foto'], [`inicio_s${n}Etiqueta`, 'Etiqueta chica'], [`inicio_s${n}Titulo`, 'Título'], [`inicio_s${n}Texto`, 'Texto']]];
+const portafolio = (id, nombre, pagina) => ({
+  id, nombre: 'Portafolio: ' + nombre, archivo: pagina, icono: ICO.foto,
+  descripcion: 'Agregar, ordenar o quitar fotos, y cambiar el texto de arriba.',
+  grupos: [
+    ['Fotos', [['galeria:' + pagina, '']]],
+    ['Arriba de la página', [[id + '_etiqueta', 'Etiqueta chica'], [id + '_titulo', 'Título'], [id + '_texto', 'Texto']]],
+    ['Abajo', [[id + '_ctaTitulo', 'Frase final']]]
+  ]
+});
+
+const PAGINAS = [
+  { id: 'datos', nombre: 'Mis datos de contacto', icono: ICO.contacto, ver: 'contacto',
+    descripcion: 'Correo, teléfono, Instagram, dirección y tu nombre. Cambian en todo el sitio.',
+    grupos: [
+      ['Tus datos de contacto', [
+        ['correo', 'Tu correo', 'Cambia en todo el sitio: botones, pie de página y Contacto.'],
+        ['telefono', 'Tu teléfono y WhatsApp', 'Con el +56. Todos los botones de WhatsApp del sitio te escriben a este número.'],
+        ['instagram', 'Tu Instagram', 'Solo tu nombre de usuario, sin la @.'],
+        ['direccion', 'Dónde está tu taller', 'Se ve en Contacto y en el pie de página.']
+      ]],
+      ['Tu nombre y tu descripción', [
+        ['nombre', 'Tu nombre', 'En grande en la portada, arriba a la izquierda y en el pie.'],
+        ['marca', 'Bajo tu nombre, arriba a la izquierda', ''],
+        ['linea1', 'Lo que haces', 'La primera línea bajo tu nombre en la portada y en el pie.'],
+        ['linea2', 'Segunda línea', '']
+      ]]
+    ] },
+  { id: 'inicio', nombre: 'Inicio', archivo: './', icono: ICO.inicio,
+    descripcion: 'La portada, las fotos, los recuadros y cada sección de la página principal.',
+    grupos: [
+      ['Portada', [['nombre', 'Tu nombre'], ['linea1', 'Lo que haces'], ['linea2', 'Segunda línea']]],
+      ['Las 4 fotos bajo la portada', [['inicio_tira1', 'Foto 1'], ['inicio_tira2', 'Foto 2'], ['inicio_tira3', 'Foto 3'], ['inicio_tira4', 'Foto 4']]],
+      ['Bienvenida', [['inicio_bienvenidaEtiqueta', 'Etiqueta chica'], ['inicio_bienvenidaTitulo', 'Título']]],
+      recuadroInicio(1, 'Cursos'), recuadroInicio(2, 'Cursos online'), recuadroInicio(3, 'Portafolio'), recuadroInicio(4, 'Talleres realizados'),
+      ['Quién soy (resumen)', [['inicio_qsFoto', 'Foto'], ['inicio_qsSaludo', 'Saludo'], ['inicio_qsTitulo', 'Título'], ['inicio_qsTexto', 'Texto']]],
+      ['Cursos permanentes', [['inicio_cursosEtiqueta', 'Etiqueta chica'], ['cursosTitulo', 'Título'], ['cursosTexto', 'Texto bajo el título', 'Las tarjetas de abajo son tus clases: se cambian en <a href="#presenciales">Clases presenciales</a>.']]],
+      ['Cursos online', [['inicio_onlineEtiqueta', 'Etiqueta chica'], ['onlineTitulo', 'Título', 'También es el título de la página Cursos online.'], ['onlineTexto', 'Texto bajo el título']]],
+      ['Talleres en instituciones', [['inicio_instTitulo', 'Título'], ['inicio_instTexto', 'Texto'], ['inicio_instLista', 'Instituciones']]],
+      ['Recuadro morado del final', [['inicio_ctaEtiqueta', 'Etiqueta chica'], ['inicio_ctaTitulo', 'Título'], ['inicio_ctaTexto', 'Texto']]]
+    ] },
+  { id: 'quien-soy', nombre: 'Quién soy', archivo: 'quien-soy', icono: ICO.persona,
+    descripcion: 'Tu foto, tu presentación y la línea de tiempo de tu experiencia.',
+    grupos: [
+      ['Presentación', [['qs_foto', 'Foto'], ['qs_saludo', 'Saludo'], ['qs_titulo', 'Título'], ['qs_texto', 'Texto']]],
+      ['Tu experiencia', [['qs_experienciaTitulo', 'Título'], ['qs_experiencia', 'Línea de tiempo']]],
+      ['Abajo', [['qs_ctaTitulo', 'Frase final']]]
+    ] },
+  { id: 'cursos', nombre: 'Cursos', archivo: 'cursos', icono: ICO.presencial,
+    descripcion: 'El texto y la foto de arriba, y la tarjeta de los cursos en video.',
+    grupos: [
+      ['Arriba de la página', [['cursos_etiqueta', 'Etiqueta chica'], ['cursos_titulo', 'Título'], ['cursos_texto', 'Texto'], ['cursos_foto', 'Foto']]],
+      ['Tarjeta de los cursos en video', [['cursos_videoFoto', 'Foto'], ['cursos_videoEtiqueta', 'Etiqueta chica'], ['cursos_videoTitulo', 'Título'],
+        ['cursos_videoTexto', 'Texto', 'Va al final, después de tus clases. Las demás tarjetas se cambian en <a href="#presenciales">Clases presenciales</a>.']]]
+    ] },
+  { id: 'cursos-online', nombre: 'Cursos online', archivo: 'cursos-online', icono: ICO.cursos,
+    descripcion: 'El texto de arriba y los 3 pasos de "¿Cómo funciona?".',
+    grupos: [
+      ['Arriba de la página', [['online_etiqueta', 'Etiqueta chica'], ['onlineTitulo', 'Título', 'También se ve en el inicio.'], ['onlineTexto', 'Texto']]],
+      ['¿Cómo funciona?', [['online_pasosTitulo', 'Título'], ['online_paso1Titulo', 'Paso 1: título'], ['online_paso1Texto', 'Paso 1: texto'],
+        ['online_paso2Titulo', 'Paso 2: título'], ['online_paso2Texto', 'Paso 2: texto'], ['online_paso3Titulo', 'Paso 3: título'], ['online_paso3Texto', 'Paso 3: texto']]]
+    ] },
+  { id: 'contacto', nombre: 'Contacto', archivo: 'contacto', icono: ICO.contacto,
+    descripcion: 'El título y el texto de la página de contacto.',
+    grupos: [
+      ['Textos', [['contacto_etiqueta', 'Etiqueta chica'], ['contacto_titulo', 'Título'], ['contacto_texto', 'Texto', 'Tu correo, teléfono y dirección se cambian en <a href="#pagina/datos">Mis datos de contacto</a>.'], ['contacto_formTitulo', 'Título del formulario']]]
+    ] },
+  { id: 'patrones', nombre: 'Patrones', archivo: 'patrones', icono: ICO.pdf,
+    descripcion: 'El texto de la página de patrones.',
+    grupos: [
+      ['Textos', [['patrones_etiqueta', 'Etiqueta chica'], ['patrones_titulo', 'Título'], ['patrones_texto', 'Texto'], ['patrones_ctaTitulo', 'Frase final']]]
+    ] },
+  { id: 'talleres', nombre: 'Talleres realizados (textos)', archivo: 'talleres', icono: ICO.talleres,
+    descripcion: 'El texto de arriba de la página. Los talleres y sus fotos están en Talleres realizados.',
+    grupos: [
+      ['Textos', [['talleres_etiqueta', 'Etiqueta chica'], ['talleres_titulo', 'Título'], ['talleres_texto', 'Texto', 'Cada taller con sus fotos se cambia en <a href="#talleres">Talleres realizados</a>.'], ['talleres_ctaTitulo', 'Frase final']]]
+    ] },
+  portafolio('vestuario', 'Vestuario', 'vestuario'),
+  portafolio('accesorios', 'Accesorios', 'accesorios'),
+  portafolio('ilustracion', 'Ilustración textil', 'ilustracion-textil'),
+  portafolio('arteterapia', 'Arte terapia', 'arte-terapia')
 ];
 
-async function textos() {
-  cargando('textos');
-  const t = { ...NM.TEXTOS, ...await nube.textos() };
-  marco('textos', `
-    <h2 class="panel-titulo">Textos de mi página</h2>
-    <p class="ayuda">${ICO.ayuda}<span>Cambia lo que quieras y toca <b>Guardar cambios</b>. Si borras un texto, vuelve el original.</span></p>
-    <form id="f-textos" class="editor">
-      ${GRUPOS_TEXTOS.map(([grupo, campos]) => `<section class="paso">
-        <h3>${grupo}</h3>
-        ${campos.map(([k, l, ayuda]) => `<label>${l}
-          <input name="${k}" value="${esc(t[k])}" maxlength="200">
-          ${ayuda ? `<small>${ayuda}</small>` : ''}</label>`).join('')}
-      </section>`).join('')}
-      <div class="barra-guardar">
-        <span id="estado-guardado">${ICO.ok} Todo guardado</span>
-        <a class="btn btn-borde" href="./" target="_blank" rel="noopener">${ICO.ojo} Ver mi página</a>
-        <button class="btn btn-grande" type="submit">Guardar cambios</button>
+// Valores originales leídos del HTML de cada página: { clave: { tipo, valor } }
+const htmlPaginas = {};
+async function originales(archivo) {
+  if (!archivo) return {};
+  if (!htmlPaginas[archivo]) {
+    const r = await fetch(archivo, { cache: 'no-cache' });
+    if (!r.ok) throw new Error('No se pudo leer ' + archivo);
+    htmlPaginas[archivo] = new DOMParser().parseFromString(await r.text(), 'text/html');
+  }
+  // Texto de un elemento con sus negritas entre *asteriscos*
+  const aTexto = (el) => {
+    if (!el) return '';
+    const c = el.cloneNode(true);
+    c.querySelectorAll('b, strong').forEach(b => b.replaceWith('*' + b.textContent.trim() + '*'));
+    c.querySelectorAll('br').forEach(b => b.replaceWith('\n'));
+    return c.textContent.replace(/[ \t\r]*\n[ \t\r]*/g, '\n').replace(/[ \t\r]+/g, ' ').trim();
+  };
+  const LEER = {
+    foto: (el) => (el.getAttribute('src') || '').replace(/^assets\/img\//, ''),
+    parrafos: (el) => [...el.querySelectorAll('p')].map(aTexto).join('\n\n'),
+    lista: (el) => [...el.children].map(aTexto).join('\n'),
+    'linea-tiempo': (el) => [...el.children].map(li => {
+      const b = li.querySelector('b');
+      return (b ? b.textContent.trim() + ': ' : '') + aTexto(li.querySelector('span') || li);
+    }).join('\n')
+  };
+  const res = {};
+  htmlPaginas[archivo].querySelectorAll('[data-texto]').forEach(el => {
+    const k = el.dataset.texto;
+    if (k in res) return;
+    const tipo = el.dataset.tipo || 'texto';
+    res[k] = { tipo, valor: (LEER[tipo] || ((e) => e.textContent.replace(/\s+/g, ' ').trim()))(el) };
+  });
+  return res;
+}
+
+const limpiarCacheTextos = () => { try { sessionStorage.removeItem('nm_textos'); sessionStorage.removeItem('nm_galerias'); } catch (x) {} };
+
+async function paginas() {
+  cargando('paginas');
+  marco('paginas', `
+    <h2 class="panel-titulo">Mis páginas</h2>
+    <p class="ayuda">${ICO.ayuda}<span>Elige qué quieres cambiar. En cada página puedes cambiar sus textos y sus fotos; en el portafolio, también agregar, ordenar y quitar fotos.</span></p>
+    <div class="acciones">
+      ${PAGINAS.map(p => `<a class="accion" href="#pagina/${p.id}">${p.icono || ICO.textos}<b>${esc(p.nombre)}</b><span>${esc(p.descripcion)}</span></a>`).join('')}
+    </div>
+    <h2 class="panel-titulo">También puedes cambiar</h2>
+    <div class="acciones">
+      <a class="accion" href="#presenciales">${ICO.presencial}<b>Clases presenciales</b><span>Cada clase con su página, precio, horarios y fotos.</span></a>
+      <a class="accion" href="#talleres">${ICO.talleres}<b>Talleres realizados</b><span>Cada taller con sus años, su texto y sus fotos.</span></a>
+      <a class="accion" href="#cursos">${ICO.cursos}<b>Cursos online</b><span>Tus cursos en video, sus precios y sus fotos.</span></a>
+    </div>`);
+}
+
+async function editarPagina(id) {
+  const pag = PAGINAS.find(p => p.id === id);
+  if (!pag) { location.hash = 'paginas'; return; }
+  cargando('paginas');
+  const conGaleria = pag.grupos.some(([, campos]) => campos.some(([k]) => k.startsWith('galeria:')));
+  const [guardados, orig, gals] = await Promise.all([nube.textos(), originales(pag.archivo), conGaleria ? nube.galerias() : {}]);
+  pintarPagina(pag, guardados, orig, gals);
+}
+
+function pintarPagina(pag, guardados, orig, gals) {
+  const original = (k) => NM.TEXTOS[k] ?? orig[k]?.valor ?? '';
+  const tipo = (k) => orig[k]?.tipo || 'texto';
+  const valor = (k) => guardados[k] || original(k);
+
+  const campoFoto = (k, etiqueta) => `<div class="campo-foto" data-campo-foto="${k}">
+      <p class="etiqueta-campo">${esc(etiqueta)}</p>
+      <div class="recuadro-foto">
+        <img src="${esc(NM.foto(valor(k)))}" alt="">
+        <label class="btn btn-borde btn-chico">${ICO.foto} Cambiar foto<input type="file" accept="image/*" data-foto-campo="${k}" hidden></label>
+        <button type="button" class="btn btn-borde btn-chico" data-foto-original="${k}" ${valor(k) === original(k) ? 'hidden' : ''}>Volver a la foto original</button>
       </div>
+      <div class="subida" hidden><div class="progreso"><span></span></div><p></p></div>
+    </div>`;
+  const campoTexto = (k, etiqueta, ayuda = '') => {
+    const t = tipo(k);
+    const v = valor(k);
+    const ayudas = [ayuda, AYUDA_TIPO[t]].filter(Boolean).join(' ');
+    const largo = t !== 'texto' || v.length > 90;
+    const extra = k === 'correo' ? 'type="email" autocomplete="off"' : k === 'telefono' ? 'type="tel" inputmode="tel"' : '';
+    return `<label>${esc(etiqueta)}
+      ${largo ? `<textarea name="${k}" rows="${t === 'texto' ? 3 : Math.min(10, Math.max(4, v.split('\n').length + 1))}" maxlength="4000">${esc(v)}</textarea>`
+        : `<input name="${k}" value="${esc(v)}" maxlength="300" ${extra}>`}
+      ${ayudas ? `<small>${ayudas}</small>` : ''}</label>`;
+  };
+  const campo = ([k, etiqueta, ayuda]) => k.startsWith('galeria:') ? `<div data-galeria-editar="${k.slice(8)}"></div>`
+    : tipo(k) === 'foto' ? campoFoto(k, etiqueta) : campoTexto(k, etiqueta, ayuda);
+  const hayTextos = pag.grupos.some(([, campos]) => campos.some(([k]) => !k.startsWith('galeria:') && tipo(k) !== 'foto'));
+
+  const zona = marco('paginas', `
+    <a class="volver" href="#paginas">${ICO.volver} Volver a mis páginas</a>
+    <div class="panel-barra">
+      <h2 class="panel-titulo">${esc(pag.nombre)}</h2>
+      <a class="btn btn-borde btn-chico" href="${esc(pag.ver || pag.archivo)}" target="_blank" rel="noopener">${ICO.ojo} Ver cómo se ve</a>
+    </div>
+    <p class="ayuda">${ICO.ayuda}<span>Cambia lo que quieras y toca <b>Guardar cambios</b>. Si borras un texto, vuelve el original. Las fotos se guardan solas apenas terminan de subir.</span></p>
+    <form id="f-pagina" class="editor" novalidate>
+      ${pag.grupos.map(([titulo, campos]) => `<section class="paso">
+        <h3>${esc(titulo)}</h3>
+        ${campos.map(campo).join('')}
+      </section>`).join('')}
+      ${hayTextos ? `<div class="barra-guardar">
+        <span id="estado-guardado">${ICO.ok} Todo guardado</span>
+        <button class="btn btn-grande" type="submit">Guardar cambios</button>
+      </div>` : ''}
     </form>`);
-  const f = document.getElementById('f-textos');
+
+  const f = zona.querySelector('#f-pagina');
   marcarSucio(false);
-  f.addEventListener('input', () => marcarSucio(true));
+  f.addEventListener('input', (e) => { if (e.target.type !== 'file') marcarSucio(true); });
+
+  // ----- Textos -----
   f.addEventListener('submit', async (e) => {
     e.preventDefault();
     const nuevo = {};
-    GRUPOS_TEXTOS.forEach(([, campos]) => campos.forEach(([k]) => {
-      nuevo[k] = f[k].value.trim() || NM.TEXTOS[k];
-      f[k].value = nuevo[k];
-    }));
+    const quitar = [];
+    for (const el of f.querySelectorAll('input[name], textarea[name]')) {
+      const k = el.name;
+      let v = el.value.trim();
+      if (k === 'instagram') v = v.replace(/^.*instagram\.com\//i, '').replace(/[/?].*$/, '').replace(/^@/, '');
+      if (k === 'correo' && v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+        await confirmar({ titulo: 'Revisa tu correo', texto: 'El correo no parece estar bien escrito. Debe ser algo como <b>nombre@gmail.com</b>.', si: 'Entendido', soloAceptar: true });
+        el.focus();
+        return;
+      }
+      if (k === 'telefono' && v && NM.numeroWhatsapp(v).length < 10) {
+        await confirmar({ titulo: 'Revisa tu teléfono', texto: 'Escríbelo completo, con el código de Chile. Ej: <b>+56 9 3370 1311</b>.', si: 'Entendido', soloAceptar: true });
+        el.focus();
+        return;
+      }
+      if (!v || v === original(k)) { quitar.push(k); v = original(k); }
+      else nuevo[k] = v;
+      el.value = v;
+      guardados[k] = nuevo[k] || '';
+    }
     try {
-      await nube.guardarTextos(nuevo);
-      try { sessionStorage.removeItem('nm_textos'); } catch (x) {}
+      await nube.guardarTextos(nuevo, quitar);
+      limpiarCacheTextos();
       marcarSucio(false);
-      avisar('Textos guardados. Ya se ven en tu página.');
-    } catch (x) { avisar('No se pudo guardar. Revisa tu internet.', 'error'); }
+      avisar('Cambios guardados. Ya se ven en tu página.');
+    } catch (x) { avisar('No se pudo guardar. Revisa tu internet y vuelve a intentarlo.', 'error'); }
   });
+
+  // ----- Fotos sueltas: se guardan apenas suben -----
+  const ponerFoto = async (k, v) => {
+    const caja = f.querySelector(`[data-campo-foto="${k}"]`);
+    const anterior = guardados[k];
+    const esOriginal = v === original(k);
+    await nube.guardarTextos(esOriginal ? {} : { [k]: v }, esOriginal ? [k] : []);
+    limpiarCacheTextos();
+    guardados[k] = esOriginal ? '' : v;
+    if (anterior && anterior !== v) borrarFotoSubida(anterior);
+    caja.querySelector('img').src = NM.foto(v);
+    caja.querySelector('[data-foto-original]').hidden = esOriginal;
+  };
+  f.querySelectorAll('[data-foto-campo]').forEach(inp => inp.onchange = async () => {
+    const archivo = inp.files[0];
+    inp.value = '';
+    if (!archivo || await esperarSubidaFoto()) return;
+    const caja = inp.closest('[data-campo-foto]').querySelector('.subida');
+    caja.hidden = false;
+    caja.querySelector('p').innerHTML = '<b>Subiendo la foto…</b> No cierres esta página hasta que termine.';
+    subiendo++;
+    try {
+      const url = await subirFotoPublica(archivo);
+      if (url) { await ponerFoto(inp.dataset.fotoCampo, url); avisar('Foto subida y guardada. Ya se ve en tu página.'); }
+    } catch (x) {
+      avisar('No se pudo subir la foto. Revisa tu internet y vuelve a intentarlo.', 'error');
+    }
+    subiendo = Math.max(0, subiendo - 1);
+    caja.hidden = true;
+  });
+  f.querySelectorAll('[data-foto-original]').forEach(b => b.onclick = async () => {
+    if (!await confirmar({ titulo: '¿Volver a la foto original?', texto: 'Se quita la foto que subiste y vuelve la que estaba al principio.', si: 'Sí, volver a la original', no: 'No' })) return;
+    try { await ponerFoto(b.dataset.fotoOriginal, original(b.dataset.fotoOriginal)); avisar('Listo, volvió la foto original.'); }
+    catch (x) { avisar('No se pudo guardar. Revisa tu internet y vuelve a intentarlo.', 'error'); }
+  });
+
+  // ----- Galerías del portafolio -----
+  f.querySelectorAll('[data-galeria-editar]').forEach(caja => editorGaleria(caja, caja.dataset.galeriaEditar, gals));
+}
+
+function editorGaleria(caja, nombre, gals) {
+  const cambiada = !!gals[nombre];
+  const lista = [...(gals[nombre] || NM.GALERIAS[nombre] || [])];
+  caja.innerHTML = `
+    <p class="ayuda-chica">Aparecen en tu página en este orden. Con las flechas las mueves; las fotos nuevas quedan al principio. Todo se guarda solo.</p>
+    <p class="etiqueta-campo">Fotos <span class="contador">${lista.length}</span></p>
+    <ul class="fotos-lista galeria-editar">${lista.map((f, j) => `<li><img src="${esc(NM.foto(f))}" alt="Foto ${j + 1}" loading="lazy">
+      <span class="foto-num">${j + 1}</span>
+      <div class="foto-controles">
+        <button type="button" class="icono" data-mover="${j}/-1" ${j === 0 ? 'disabled' : ''} aria-label="Mover la foto ${j + 1} antes">${ICO.izquierda}</button>
+        <button type="button" class="icono peligro" data-quitar="${j}" aria-label="Quitar la foto ${j + 1}">${ICO.basura}</button>
+        <button type="button" class="icono" data-mover="${j}/1" ${j === lista.length - 1 ? 'disabled' : ''} aria-label="Mover la foto ${j + 1} después">${ICO.derecha}</button>
+      </div></li>`).join('')}</ul>
+    <div class="botones-fila">
+      <label class="btn subir-archivo">${ICO.subir} Subir fotos<input type="file" accept="image/*" multiple data-subir-galeria hidden></label>
+      ${cambiada ? '<button type="button" class="btn btn-borde" data-restaurar>Volver a las fotos originales</button>' : ''}
+    </div>
+    <div class="subida" hidden><div class="progreso"><span></span></div><p></p></div>`;
+
+  const guardar = async (nueva, texto) => {
+    try {
+      await nube.guardarGaleria(nombre, nueva);
+      limpiarCacheTextos();
+      if (nueva) gals[nombre] = nueva; else delete gals[nombre];
+      avisar(texto);
+      editorGaleria(caja, nombre, gals);
+      return true;
+    } catch (x) {
+      avisar('No se pudo guardar. Revisa tu internet y vuelve a intentarlo.', 'error');
+      return false;
+    }
+  };
+
+  caja.querySelectorAll('[data-mover]').forEach(b => b.onclick = async () => {
+    if (await esperarSubidaFoto()) return;
+    const [j, d] = b.dataset.mover.split('/').map(Number);
+    [lista[j], lista[j + d]] = [lista[j + d], lista[j]];
+    guardar(lista, 'Orden guardado');
+  });
+  caja.querySelectorAll('[data-quitar]').forEach(b => b.onclick = async () => {
+    if (await esperarSubidaFoto()) return;
+    const j = Number(b.dataset.quitar);
+    if (!await confirmar({ titulo: `¿Quitar la foto ${j + 1}?`, texto: 'La foto deja de verse en tu portafolio.', si: 'Sí, quitarla', no: 'No', peligro: true })) return;
+    const [quitada] = lista.splice(j, 1);
+    if (await guardar(lista, 'Foto quitada')) borrarFotoSubida(quitada);
+  });
+  caja.querySelector('[data-restaurar]')?.addEventListener('click', async () => {
+    if (await esperarSubidaFoto()) return;
+    if (!await confirmar({ titulo: '¿Volver a las fotos originales?', texto: 'Se quitan las fotos que subiste y vuelven las de antes, en su orden original. Esto no se puede deshacer.', si: 'Sí, volver a las originales', no: 'No', peligro: true })) return;
+    if (await guardar(null, 'Volvieron las fotos originales')) lista.forEach(borrarFotoSubida);
+  });
+
+  // Varias fotos a la vez, una tras otra, con su avance
+  caja.querySelector('[data-subir-galeria]').onchange = async (e) => {
+    const archivos = [...e.target.files];
+    e.target.value = '';
+    if (!archivos.length || await esperarSubidaFoto()) return;
+    const subida = caja.querySelector('.subida');
+    const barra = subida.querySelector('.progreso span');
+    subida.hidden = false;
+    subiendo++;
+    const nuevas = [];
+    try {
+      for (const [n, archivo] of archivos.entries()) {
+        subida.querySelector('p').innerHTML = `<b>Subiendo foto ${n + 1} de ${archivos.length}…</b> No cierres esta página hasta que termine.`;
+        barra.style.width = Math.round(100 * n / archivos.length) + '%';
+        const url = await subirFotoPublica(archivo);
+        if (url) nuevas.push(url);
+      }
+    } catch (x) {
+      avisar('No se pudieron subir todas las fotos. Revisa tu internet y vuelve a intentarlo.', 'error');
+    }
+    subiendo = Math.max(0, subiendo - 1);
+    subida.hidden = true;
+    if (nuevas.length) guardar([...nuevas, ...lista], nuevas.length === 1 ? 'Foto subida y guardada' : `${nuevas.length} fotos subidas y guardadas`);
+  };
 }
 
 // ---------- Ventas ----------
@@ -1114,7 +1421,8 @@ async function mostrar() {
     else if (seccion === 'presencial' && id) await editarPresencial(decodeURIComponent(id));
     else if (seccion === 'presenciales') await presenciales();
     else if (seccion === 'talleres') await talleres();
-    else if (seccion === 'textos') await textos();
+    else if (seccion === 'pagina' && id) await editarPagina(decodeURIComponent(id));
+    else if (seccion === 'paginas' || seccion === 'textos') await paginas();
     else if (seccion === 'ventas') await ventas();
     else await inicio();
   } catch (e) {

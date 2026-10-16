@@ -234,6 +234,9 @@ a.tarjeta, .tarjeta a.cubre { text-decoration: none; color: inherit; }
 @media (max-width: 760px) { .ficha { position: static; } }
 
 /* Línea de tiempo */
+/* Párrafos editables desde el panel: el contenedor no cambia el diseño */
+.parrafos { display: contents; }
+
 .linea-tiempo { list-style: none; padding: 0 0 0 26px; margin: 0; display: grid; gap: 22px; border-left: 2px dashed var(--rosa-fuerte); }
 .linea-tiempo li { position: relative; display: grid; gap: 2px; }
 .linea-tiempo li::before { content: ""; position: absolute; left: -34px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--lila-suave); border: 2px solid var(--rosa-fuerte); }

@@ -12,7 +12,7 @@
   const marca = `
     <a class="marca-mini" href="./">
       <img src="assets/img/logo-icono.jpg" alt="">
-      <span><strong data-texto="nombre">${esc(t.nombre)}</strong><small>Negra Mora · Clases de costura</small></span>
+      <span><strong data-texto="nombre">${esc(t.nombre)}</strong><small data-texto="marca">${esc(t.marca)}</small></span>
     </a>`;
 
   const barra = `
@@ -82,7 +82,7 @@
             <li><a href="mailto:${esc(CONTACTO.correo)}">${esc(CONTACTO.correo)}</a></li>
             <li><a href="https://wa.me/${CONTACTO.whatsapp}" target="_blank" rel="noopener">${esc(CONTACTO.telefono)}</a></li>
             <li><a href="https://instagram.com/${esc(CONTACTO.instagram)}" target="_blank" rel="noopener">Instagram @${esc(CONTACTO.instagram)}</a></li>
-            <li>La Reina, metro Francisco Bilbao</li>
+            <li data-texto="direccion">${esc(t.direccion)}</li>
           </ul>
         </div>
       </div>
@@ -115,11 +115,7 @@
   // ---------- Textos editables desde el panel ----------
   // Se leen con la API REST de Firestore (sin cargar Firebase en cada página) y se guardan
   // por sesión para que no parpadeen al cambiar de página.
-  const ponerTextos = (txt) => document.querySelectorAll('[data-texto]').forEach(el => {
-    const v = txt[el.dataset.texto];
-    if (v) el.textContent = v;
-  });
-  ponerTextos(t);
+  NM.prepararTextos();
   import(new URL('config.js', document.currentScript.src)).then(async ({ FIREBASE, EMULADORES }) => {
     const base = EMULADORES ? 'http://127.0.0.1:8080' : 'https://firestore.googleapis.com';
     const r = await fetch(`${base}/v1/projects/${FIREBASE.projectId}/databases/(default)/documents/sitio/textos`);
@@ -127,8 +123,7 @@
     const campos = (await r.json()).fields || {};
     const txt = {};
     Object.keys(campos).forEach(k => { if (campos[k].stringValue) txt[k] = campos[k].stringValue; });
-    try { sessionStorage.setItem('nm_textos', JSON.stringify(txt)); } catch (e) {}
-    ponerTextos({ ...NM.TEXTOS, ...txt });
+    NM.actualizarTextos(txt);
   }).catch(() => {});
 
   const menu = document.querySelector('.menu');
