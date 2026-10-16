@@ -22,6 +22,7 @@ Prototipo del nuevo sitio web de **Daniela Balzo** (Negra Mora Diseños): clases
 - **Firebase Storage**: videos y materiales. Solo Daniela sube; las alumnas los ven con un enlace temporal (4 horas) que entrega `/api/archivo` después de revisar que compraron el curso. Reglas en `storage.rules`.
 - **Pagos**: los cursos online se compran con cuenta (dan acceso al aula). Las clases presenciales se pagan sin cuenta: quien se inscribe deja nombre, correo y WhatsApp, queda en `inscripciones/` y la venta aparece en el panel con un botón para coordinar el horario. El precio lo pone siempre el servidor (lo guardado en el panel o los valores de `assets/js/datos.js`).
 - **Vercel Functions** (`/api`): crean el pago en Mercado Pago, reciben la notificación (webhook), confirman el pago al volver y firman los enlaces de los videos. Las compras solo las escribe el servidor.
+- **Aviso de ventas**: cada venta nueva (curso online o inscripción a clase) le llega a Daniela por correo con los datos de quien pagó, enviado con Resend (`api/_lib/aviso.js`). Sin `RESEND_API_KEY` el aviso solo queda en el registro de la función.
 
 ## Probarlo en local
 
@@ -41,7 +42,7 @@ Sin credenciales de Mercado Pago, el pago se simula con `/api/simular-pago` (sol
 
 1. Crear el proyecto en Firebase y activar Authentication (correo/contraseña), Firestore y Storage (Storage requiere el plan Blaze; poner una alerta de presupuesto).
 2. Pegar la configuración web en `assets/js/config.js` y publicar las reglas: `firebase deploy --only firestore:rules,storage --project <id>`.
-3. En Vercel, cargar las variables de `.env.example` (cuenta de servicio, credenciales de Mercado Pago, clave del webhook y `SITE_URL`).
+3. En Vercel, cargar las variables de `.env.example` (cuenta de servicio, credenciales de Mercado Pago, clave del webhook, clave de Resend para los avisos y `SITE_URL`).
 4. En Mercado Pago, configurar el webhook a `https://<dominio>/api/webhook-mp` (evento "Pagos").
 5. Crear la cuenta de Daniela en Authentication y darle acceso al panel con `scripts/crear-admin.mjs`.
 6. Con el dominio ya conectado, actualizar la vista previa al compartir: `node scripts/vista-previa.mjs https://<dominio>` (necesita Chrome y ffmpeg para regenerar la imagen; con `--sin-imagen` solo cambia las direcciones).

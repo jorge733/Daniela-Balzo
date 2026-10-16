@@ -3,6 +3,7 @@
 import crypto from 'node:crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { auth, db, EMULADOR } from './firebase.js';
+import { avisarVenta } from './aviso.js';
 
 const API = 'https://api.mercadopago.com';
 export const SIMULADO = !process.env.MP_ACCESS_TOKEN && EMULADOR;
@@ -83,9 +84,11 @@ export async function registrarPago(pago) {
   const ventaRef = db.collection('ventas').doc(String(pago.id));
   const accesoRef = db.collection('accesos').doc(ref.uid);
 
+  let venta = null; // solo si esta llamada registró la venta (el webhook y la vuelta pueden llegar juntos)
   await db.runTransaction(async (tx) => {
+    venta = null;
     if ((await tx.get(ventaRef)).exists) return;
-    tx.set(ventaRef, {
+    venta = {
       fecha: FieldValue.serverTimestamp(),
       uid: ref.uid,
       nombre: usuario?.displayName || '',
@@ -95,22 +98,25 @@ export async function registrarPago(pago) {
       monto: Number(pago.transaction_amount),
       neto: Number(pago.transaction_details?.net_received_amount ?? pago.transaction_amount),
       medio: pago.payment_method_id || ''
-    });
+    };
+    tx.set(ventaRef, venta);
     tx.set(accesoRef, { cursos: { [ref.curso]: true } }, { merge: true });
   });
+  if (venta) await avisarVenta(venta);
   return { estado: 'approved', curso: ref.curso, uid: ref.uid };
 }
 
 async function registrarInscripcion(pago, ref) {
   const inscRef = db.collection('inscripciones').doc(ref.inscripcion);
   const ventaRef = db.collection('ventas').doc(String(pago.id));
-  let insc;
+  let insc, venta = null;
   await db.runTransaction(async (tx) => {
+    venta = null;
     const d = await tx.get(inscRef);
     if (!d.exists) throw new Error('Inscripción no encontrada: ' + ref.inscripcion);
     insc = d.data();
     if ((await tx.get(ventaRef)).exists) return;
-    tx.set(ventaRef, {
+    venta = {
       tipo: 'presencial',
       fecha: FieldValue.serverTimestamp(),
       inscripcion: ref.inscripcion,
@@ -123,9 +129,11 @@ async function registrarInscripcion(pago, ref) {
       monto: Number(pago.transaction_amount),
       neto: Number(pago.transaction_details?.net_received_amount ?? pago.transaction_amount),
       medio: pago.payment_method_id || ''
-    });
+    };
+    tx.set(ventaRef, venta);
     tx.update(inscRef, { estado: 'pagada', pago: String(pago.id), pagada: FieldValue.serverTimestamp() });
   });
+  if (venta) await avisarVenta(venta);
   return { estado: 'approved', clase: insc.clase, titulo: insc.titulo, nombre: insc.nombre };
 }
 
