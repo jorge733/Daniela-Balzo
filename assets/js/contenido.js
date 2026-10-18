@@ -39,28 +39,29 @@ const NMC = (() => {
       </div>
     </a>`;
 
+  // Toda la tarjeta es el enlace (foto, título y texto); "Ver más" queda como botón visual.
   const tarjetaCursos = (c) => `
-    <article class="tarjeta">
+    <a class="tarjeta" href="${esc(enlace(c))}">
       <img src="${esc(foto(c.imagen))}" alt="" loading="lazy">
       <div class="cuerpo">
         ${c.modalidad ? `<span class="modalidad">${esc(c.modalidad)}</span>` : ''}
         <h3>${esc(c.titulo)}</h3>
         <p>${fmt(c.resumen)}</p>
-        <div class="pie-tarjeta"><a class="btn btn-chico" href="${esc(enlace(c))}">Ver más</a></div>
+        <div class="pie-tarjeta"><span class="btn btn-chico">Ver más</span></div>
       </div>
-    </article>`;
+    </a>`;
 
   // Tarjeta fija de los cursos en video, al final de la página de cursos (sus textos se cambian en el panel)
   const TARJETA_VIDEO = `
-    <article class="tarjeta">
+    <a class="tarjeta" href="cursos-online">
       <img src="assets/img/cursos-05.jpg" alt="" loading="lazy" data-texto="cursos_videoFoto" data-tipo="foto">
       <div class="cuerpo">
         <span class="modalidad" data-texto="cursos_videoEtiqueta">Online en video</span>
         <h3 data-texto="cursos_videoTitulo">Cursos online en video</h3>
         <p data-texto="cursos_videoTexto">Aprende a tu ritmo, desde tu casa: uso y manejo de máquina, ropa interior, bolsos y más. Compras el curso una vez y ves las clases cuando quieras.</p>
-        <div class="pie-tarjeta"><a class="btn btn-chico" href="cursos-online">Ver cursos en video</a></div>
+        <div class="pie-tarjeta"><span class="btn btn-chico">Ver cursos en video</span></div>
       </div>
-    </article>`;
+    </a>`;
 
   const fichaClase = (c) => {
     // Las 3 primeras fotos van arriba de la descripción; las demás, en una galería al final

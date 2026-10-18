@@ -149,6 +149,9 @@ li::marker { color: var(--rosa-fuerte); }
 .banda-morada { background: var(--morado); color: #fff; position: relative; isolation: isolate; overflow: hidden; }
 .banda-morada::before { content: ""; position: absolute; inset: 0; background: url("../img/logo-01.jpg") center / 520px repeat; opacity: .14; z-index: -1; }
 .banda-morada a:not(.btn) { color: var(--rosa); }
+.categorias { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 26px; }
+.categorias a { padding: 7px 16px; border: 2px solid rgba(255, 255, 255, .75); border-radius: 999px; color: #fff; font-weight: 600; font-size: .9rem; text-decoration: none; transition: background .2s, color .2s; }
+.categorias a:hover { background: #fff; color: var(--morado); }
 .encabezado-seccion { margin-bottom: 40px; }
 .encabezado-seccion p { color: var(--gris); max-width: 640px; }
 .centro .encabezado-seccion p, .encabezado-seccion.centro p { margin-inline: auto; }
@@ -196,6 +199,7 @@ a:hover > .flecha::after, .flecha:hover::after { transform: translateX(3px); }
 .tarjeta { background: #fff; display: flex; flex-direction: column; border-radius: var(--radio); overflow: hidden; box-shadow: 0 1px 0 var(--linea), 0 0 0 1px var(--linea); transition: transform .25s, box-shadow .25s; }
 a.tarjeta, .tarjeta a.cubre { text-decoration: none; color: inherit; }
 .tarjeta:hover { transform: translateY(-3px); box-shadow: var(--sombra), 0 0 0 1px var(--linea); }
+a.tarjeta:hover .btn { background: var(--morado); border-color: var(--morado); }
 .tarjeta .img { position: relative; overflow: hidden; }
 .tarjeta img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; transition: transform .5s; }
 .tarjeta:hover img { transform: scale(1.03); }

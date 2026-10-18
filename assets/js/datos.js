@@ -138,7 +138,10 @@ const NM = (() => {
     // Fotos bajo la portada del inicio
     'inicio-tira': desde('inicio', 1, 4),
     // Secciones "Más fotos" de cada página: parten vacías y no se muestran hasta que Daniela suba fotos
-    'inicio': [], 'quien-soy': [], 'cursos': [], 'contacto': [], 'patrones': []
+    'inicio': [], 'quien-soy': [], 'cursos': [], 'contacto': [], 'patrones': [],
+    // Una galería por categoría de patrones (también parten vacías)
+    'patrones-femenino': [], 'patrones-infantil': [], 'patrones-masculino': [],
+    'patrones-accesorios': [], 'patrones-hogar': [], 'patrones-fiestas': []
   };
 
   // ---------- Textos editables en las páginas ----------

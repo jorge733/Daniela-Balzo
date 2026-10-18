@@ -1129,9 +1129,12 @@ const PAGINAS = [
       ['Más fotos (opcional)', [['contacto_galeriaTitulo', 'Título de la sección', 'Si no subes fotos, esta sección no se muestra.'], ['galeria:contacto', '']]]
     ] },
   { id: 'patrones', nombre: 'Patrones', archivo: 'patrones', icono: ICO.pdf,
-    descripcion: 'El texto de la página de patrones.',
+    descripcion: 'El texto de la página de patrones y las fotos de cada categoría.',
     grupos: [
       ['Textos', [['patrones_etiqueta', 'Etiqueta chica'], ['patrones_titulo', 'Título'], ['patrones_texto', 'Texto'], ['patrones_ctaTitulo', 'Frase final']]],
+      ...[['femenino', 'Vestuario femenino'], ['infantil', 'Vestuario infantil'], ['masculino', 'Vestuario masculino'],
+        ['accesorios', 'Accesorios'], ['hogar', 'Decoración de hogar'], ['fiestas', 'Especial fiestas']].map(([id, nombre]) =>
+        ['Categoría: ' + nombre, [[`patrones_${id}Titulo`, 'Título', 'El nombre en el menú de Patrones no cambia.'], [`patrones_${id}Texto`, 'Texto'], ['galeria:patrones-' + id, '']]]),
       ['Más fotos (opcional)', [['patrones_galeriaTitulo', 'Título de la sección', 'Si no subes fotos, esta sección no se muestra.'], ['galeria:patrones', '']]]
     ] },
   { id: 'talleres', nombre: 'Talleres realizados (textos)', archivo: 'talleres', icono: ICO.talleres,

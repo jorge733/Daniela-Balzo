@@ -4,6 +4,13 @@
   const t = NM.textos();
   const { CONTACTO, esc } = NM;
 
+  // Submenú de Patrones: cada una lleva a su sección en patrones.html
+  const CATEGORIAS_PATRONES = [
+    ['vestuario-femenino', 'Vestuario femenino'], ['vestuario-infantil', 'Vestuario infantil'],
+    ['vestuario-masculino', 'Vestuario masculino'], ['accesorios', 'Accesorios'],
+    ['decoracion-hogar', 'Decoración de hogar'], ['especial-fiestas', 'Especial fiestas']
+  ];
+
   const enlace = (href, texto, clave, extra = '') =>
     `<a href="${href}"${clave === pagina ? ' aria-current="page"' : ''}${extra}>${texto}</a>`;
 
@@ -38,7 +45,10 @@
             ${enlace('cursos', 'Todos los cursos', 'cursos')}
             ${enlace('cursos-online', 'Cursos online', 'cursos-online')}
           </div></details>
-          ${enlace('patrones', 'Patrones', 'patrones')}
+          <details data-ir="patrones"><summary>Patrones</summary><div>
+            ${enlace('patrones', 'Todos los patrones', 'patrones')}
+            ${CATEGORIAS_PATRONES.map(([id, nombre]) => `<a href="patrones#${id}">${nombre}</a>`).join('')}
+          </div></details>
           <details data-ir="vestuario"><summary>Portafolio</summary><div>
             ${enlace('vestuario', 'Vestuario', 'vestuario')}
             ${enlace('accesorios', 'Accesorios', 'accesorios')}
@@ -182,7 +192,7 @@
       cerrar = setTimeout(() => { d.open = false; }, 250);
     });
     // Ya abierto por el mouse, un clic en el título no lo cierra; si la sección tiene página propia
-    // (Quién soy, Cursos, Portafolio), el clic lleva a ella
+    // (Quién soy, Cursos, Patrones, Portafolio), el clic lleva a ella
     d.querySelector('summary').addEventListener('click', (e) => {
       if (!conMouse.matches || e.detail === 0) return; // con teclado (detail 0) sí se abre y cierra
       if (d.dataset.ir) { e.preventDefault(); location.href = d.dataset.ir; return; }
