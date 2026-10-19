@@ -53,6 +53,98 @@
     }).catch(() => {});
   }
 
+  // ----- Galerías justificadas -----
+  // Como un texto justificado: las fotos se reparten en filas que llenan todo el ancho, sin
+  // recortarlas, así el bloque queda con bordes rectos arriba, abajo y a los lados. Cada fila
+  // tiene su propia altura. Necesita la proporción de cada foto; mientras no la sabe, la galería
+  // se ve como mosaico. Las proporciones se recuerdan para que la próxima visita sea inmediata.
+  const PROP = 'nm_proporciones';
+  let proporciones = {};
+  try { proporciones = JSON.parse(localStorage.getItem(PROP) || '{}'); } catch (e) {}
+  const proporcion = (img) => {
+    if (img.naturalWidth) {
+      const r = img.naturalWidth / img.naturalHeight;
+      if (proporciones[img.src] !== r) {
+        proporciones[img.src] = r;
+        clearTimeout(proporcion.t);
+        proporcion.t = setTimeout(() => { try { localStorage.setItem(PROP, JSON.stringify(proporciones)); } catch (e) {} }, 500);
+      }
+      return r;
+    }
+    return proporciones[img.src];
+  };
+
+  // Reparte las proporciones en k filas seguidas lo más parejas posible (partición lineal).
+  function filas(rs, k) {
+    const n = rs.length, ideal = rs.reduce((a, b) => a + b, 0) / k;
+    const acum = [0]; rs.forEach((r, i) => acum.push(acum[i] + r));
+    const costo = Array.from({ length: k + 1 }, () => new Array(n + 1).fill(Infinity));
+    const corte = Array.from({ length: k + 1 }, () => new Array(n + 1).fill(0));
+    costo[0][0] = 0;
+    for (let j = 1; j <= k; j++) {
+      for (let i = j; i <= n; i++) {
+        for (let p = j - 1; p < i; p++) {
+          const c = costo[j - 1][p] + (acum[i] - acum[p] - ideal) ** 2;
+          if (c < costo[j][i]) { costo[j][i] = c; corte[j][i] = p; }
+        }
+      }
+    }
+    const res = [];
+    for (let j = k, i = n; j > 0; j--) { const p = corte[j][i]; res.unshift([p, i]); i = p; }
+    return res;
+  }
+
+  function justificar(el) {
+    const botones = [...el.children].filter(b => b.tagName === 'BUTTON');
+    const quitar = () => { el.classList.remove('justificada'); botones.forEach(b => { b.style.width = b.style.height = ''; }); };
+    if (botones.length < 2) return quitar();
+    const imgs = botones.map(b => b.querySelector('img'));
+    imgs.forEach(i => { if (i.loading === 'lazy') i.loading = 'eager'; });
+    const rs = imgs.map(proporcion);
+    if (rs.some(r => !r)) return; // falta saber la proporción de alguna; se reintenta al cargar
+    const W = Math.floor(el.getBoundingClientRect().width);
+    if (!W) return; // oculta
+    const g = innerWidth <= 560 ? 8 : 12;
+    const alto = innerWidth <= 560 ? 150 : innerWidth <= 900 ? 210 : 270;
+    const total = rs.reduce((a, b) => a + b, 0);
+    const k = Math.min(botones.length, Math.max(1, Math.round(total * alto / W)));
+    el.classList.add('justificada');
+    el.style.setProperty('--g', g + 'px');
+    filas(rs, k).forEach(([a, b]) => {
+      const suma = rs.slice(a, b).reduce((x, y) => x + y, 0);
+      let h = (W - g * (b - a - 1)) / suma;
+      // Una sola fila con pocas fotos: que no queden gigantes (la fila se centra)
+      const llena = !(k === 1 && h > alto * 1.5);
+      if (!llena) h = alto * 1.5;
+      h = Math.round(h);
+      let usado = 0;
+      for (let i = a; i < b; i++) {
+        const w = i === b - 1 && llena ? W - g * (b - a - 1) - usado : Math.floor(rs[i] * h);
+        usado += w;
+        botones[i].style.width = w + 'px';
+        botones[i].style.height = h + 'px';
+      }
+    });
+  }
+
+  const pendientes = new Set();
+  const programar = (el) => {
+    if (!el || el.dataset.forma === 'tira') return;
+    if (!pendientes.size) setTimeout(() => { pendientes.forEach(justificar); pendientes.clear(); });
+    pendientes.add(el);
+  };
+  const vistas = new WeakSet();
+  const medir = new ResizeObserver(entradas => entradas.forEach(e => programar(e.target)));
+  const buscarGalerias = () => document.querySelectorAll('.galeria[data-galeria]').forEach(el => {
+    if (!vistas.has(el)) { vistas.add(el); medir.observe(el); }
+    programar(el);
+  });
+  // Cuando llega una foto, ya se sabe su proporción
+  document.addEventListener('load', (e) => { if (e.target.tagName === 'IMG') programar(e.target.closest('.galeria[data-galeria]')); }, true);
+  // Galerías nuevas o que cambiaron (las de las clases y talleres se dibujan después, desde contenido.js)
+  new MutationObserver(buscarGalerias).observe(document.body, { childList: true, subtree: true });
+  buscarGalerias();
+
   const visor = document.createElement('div');
   visor.className = 'visor';
   visor.hidden = true;

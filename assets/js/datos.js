@@ -127,6 +127,15 @@ const NM = (() => {
   ];
   const posNivel = (c) => Math.max(0, NIVELES.findIndex(n => n.id === c.nivel));
 
+  // Categorías del submenú de Patrones; los cursos online se ordenan con las mismas
+  const CATEGORIAS = [
+    { id: 'vestuario-femenino', nombre: 'Vestuario femenino' }, { id: 'vestuario-infantil', nombre: 'Vestuario infantil' },
+    { id: 'vestuario-masculino', nombre: 'Vestuario masculino' }, { id: 'accesorios', nombre: 'Accesorios' },
+    { id: 'decoracion-hogar', nombre: 'Decoración de hogar' }, { id: 'especial-fiestas', nombre: 'Especial fiestas' }
+  ];
+  const OTROS = { id: 'otros', nombre: 'Otros cursos' };
+  const categoria = (c) => CATEGORIAS.find(k => k.id === c.categoria) || OTROS;
+
   // Galerías del portafolio originales (lo editado en el panel vive en sitio/galerias, ver galerias.js)
   const serie = (nombre, ...n) => n.map(x => `${nombre}-${String(x).padStart(2, '0')}.jpg`);
   const desde = (nombre, a, b) => serie(nombre, ...Array.from({ length: b - a + 1 }, (_, i) => a + i));
@@ -245,6 +254,7 @@ const NM = (() => {
     CONTACTO,
     TEXTOS,
     NIVELES,
+    CATEGORIAS,
     PRESENCIALES,
     TALLERES,
     GALERIAS,
@@ -257,6 +267,12 @@ const NM = (() => {
     foto,
     /** Nivel de un curso (los cursos sin nivel cuentan como básicos). */
     nivel: (c) => NIVELES[posNivel(c)],
+    /** Categoría de un curso (los que no tienen quedan en "Otros cursos"). */
+    categoria,
+    /** Agrupa cursos (ya ordenados) por categoría, en el orden del menú y con "Otros cursos" al final. */
+    porCategoria: (lista) => [...CATEGORIAS, OTROS]
+      .map(k => ({ ...k, cursos: lista.filter(c => categoria(c).id === k.id) }))
+      .filter(g => g.cursos.length),
     /** Ordena cursos de lo más simple a lo más complejo y luego por el orden del panel. */
     ordenarCursos: (lista) => lista.sort((a, b) => posNivel(a) - posNivel(b) || (a.orden ?? 0) - (b.orden ?? 0) || a.titulo.localeCompare(b.titulo)),
     textos: () => ({ ...TEXTOS, ...guardados }),

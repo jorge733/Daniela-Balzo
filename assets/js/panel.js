@@ -252,7 +252,7 @@ async function cursos() {
         <img src="${esc(NM.imagen(c))}" alt="">
         <div>
           <b>${esc(c.titulo)}</b>
-          <span class="curso-datos">Nivel ${NM.nivel(c).nombre.toLowerCase()} · ${clp(c.precio)} · Videos: ${con} de ${c.lecciones.length}</span>
+          <span class="curso-datos">${esc(NM.categoria(c).nombre)} · Nivel ${NM.nivel(c).nombre.toLowerCase()} · ${clp(c.precio)} · Videos: ${con} de ${c.lecciones.length}</span>
           ${c.publicado ? `<span class="estado estado-ok">${ICO.ok} En tu página</span>` : '<span class="estado">Oculto (todavía no se muestra)</span>'}
         </div>
         <span class="btn btn-borde btn-chico">Abrir</span>
@@ -304,6 +304,12 @@ function pintarEditor(c) {
             <span><b>${nv.nombre}</b><small>${nv.titulo}</small></span>
           </label>`).join('')}
         </fieldset>
+        <label>Categoría
+          <select name="categoria">
+            ${NM.CATEGORIAS.map(k => `<option value="${k.id}" ${c.categoria === k.id ? 'selected' : ''}>${k.nombre}</option>`).join('')}
+            <option value="" ${NM.categoria(c).id === 'otros' ? 'selected' : ''}>Otros cursos (sin categoría)</option>
+          </select>
+          <small>Las mismas de Patrones. En Cursos online y en Mis cursos los cursos se agrupan por categoría.</small></label>
         <label>Precio
           <span class="campo-precio"><span>$</span><input name="precio" inputmode="numeric" value="${precioTexto(c.precio)}" required></span>
           <small>En pesos chilenos. Mercado Pago descuenta su comisión de cada venta.</small></label>
@@ -394,6 +400,7 @@ function pintarEditor(c) {
     c.requisitos = f.requisitos.value.trim();
     c.publicado = f.publicado.checked;
     c.nivel = f.nivel.value || 'basico';
+    c.categoria = f.categoria.value;
     f.querySelectorAll('[name=leccion]').forEach((i) => {
       const j = Number(i.dataset.j);
       c.lecciones[j].titulo = i.value.trim() || 'Clase ' + (j + 1);
@@ -597,6 +604,16 @@ function pintarEditor(c) {
 
 // ---------- Fotos de clases presenciales y talleres ----------
 const fotoUrl = (f) => NMC.foto(f);
+// Lista de fotos con su número, flechas para moverlas (también se arrastran) y botón para quitarlas.
+// id identifica la foto en los data-* de los botones.
+const listaFotos = (fotos, id) => `<p class="ayuda-chica">${fotos.length > 1 ? 'Para cambiar una foto de lugar, arrástrala (en el celular, deja el dedo apretado sobre ella y muévela) o usa las flechas.' : ''}</p>
+  <ul class="fotos-lista galeria-editar">${fotos.map((f, j) => `<li><img src="${esc(fotoUrl(f))}" alt="Foto ${j + 1}" loading="lazy">
+    ${fotos.length > 1 ? `<span class="foto-num">${j + 1}</span>` : ''}
+    <div class="foto-controles">
+      <button type="button" class="icono" data-mover-foto="${id(j)}/-1" ${j === 0 ? 'disabled' : ''} aria-label="Mover la foto ${j + 1} antes">${ICO.izquierda}</button>
+      <button type="button" class="icono peligro" data-quitar-foto="${id(j)}" aria-label="Quitar la foto ${j + 1}">${ICO.basura}</button>
+      <button type="button" class="icono" data-mover-foto="${id(j)}/1" ${j === fotos.length - 1 ? 'disabled' : ''} aria-label="Mover la foto ${j + 1} después">${ICO.derecha}</button>
+    </div></li>`).join('')}</ul>`;
 // Sube una foto pública (clases presenciales y talleres). Devuelve su dirección o null.
 async function subirFotoPublica(archivo) {
   if (!/^image\//.test(archivo.type)) {
@@ -734,8 +751,7 @@ function pintarPresencial(lista, c) {
       <section class="paso">
         <h3><span class="num">5</span> Fotos de la página <span class="contador">${c.fotos.length} ${c.fotos.length === 1 ? 'foto' : 'fotos'}</span></h3>
         <p class="ayuda-chica">Las 3 primeras van arriba de la descripción; las demás, en una galería al final de la página. Puedes subir varias a la vez. Es opcional.</p>
-        ${c.fotos.length ? `<ul class="fotos-lista">${c.fotos.map((f, k) => `<li><img src="${esc(fotoUrl(f))}" alt="Foto ${k + 1}">
-          <button type="button" class="icono peligro" data-quitar-foto="${k}" aria-label="Quitar la foto ${k + 1}">${ICO.basura}</button></li>`).join('')}</ul>` : ''}
+        ${c.fotos.length ? listaFotos(c.fotos, k => k) : ''}
         <label class="btn btn-borde subir-archivo">${ICO.foto} Subir fotos<input type="file" accept="image/*" multiple id="subir-fotos" hidden></label>
         <div class="subida" id="subida-fotos" hidden><div class="progreso"><span></span></div><p></p></div>
       </section>
@@ -875,6 +891,17 @@ function pintarPresencial(lista, c) {
     const [quitada] = c.fotos.splice(k, 1);
     if (await guardar('Foto quitada')) { borrarFotoSubida(quitada); pintarPresencial(lista, c); }
   });
+  const moverFoto = async (desde, hasta) => {
+    if (await esperarSubidaFoto()) return;
+    leer();
+    moverEn(c.fotos, desde, hasta);
+    guardarYRepintar('Orden guardado');
+  };
+  f.querySelectorAll('[data-mover-foto]').forEach(b => b.onclick = () => {
+    const [k, d] = b.dataset.moverFoto.split('/').map(Number);
+    moverFoto(k, k + d);
+  });
+  arrastrarParaOrdenar(f.querySelector('.galeria-editar'), moverFoto);
 
   // Recuadros
   document.getElementById('agregar-recuadro').onclick = () => {
@@ -949,8 +976,7 @@ function pintarTalleres(lista) {
           <small>Qué hicieron, con quién y dónde. Lo que pongas entre *asteriscos* sale en <b>negrita</b>.</small></label>
         <div>
           <p class="etiqueta-campo">Fotos <span class="contador">${(t.fotos || []).length}</span></p>
-          ${(t.fotos || []).length ? `<ul class="fotos-lista">${t.fotos.map((f, j) => `<li><img src="${esc(fotoUrl(f))}" alt="Foto ${j + 1}" loading="lazy">
-            <button type="button" class="icono peligro" data-quitar-foto="${k}/${j}" aria-label="Quitar la foto ${j + 1}">${ICO.basura}</button></li>`).join('')}</ul>` : ''}
+          ${(t.fotos || []).length ? `<div data-fotos-taller="${k}">${listaFotos(t.fotos, j => `${k}/${j}`)}</div>` : ''}
           <label class="btn btn-borde subir-archivo">${ICO.foto} Subir fotos<input type="file" accept="image/*" multiple data-subir-fotos="${k}" hidden></label>
           <div class="subida" hidden><div class="progreso"><span></span></div><p></p></div>
         </div>
@@ -1014,6 +1040,20 @@ function pintarTalleres(lista) {
     leer();
     const [quitada] = lista[k].fotos.splice(j, 1);
     if (await guardar('Foto quitada')) { borrarFotoSubida(quitada); pintarTalleres(lista); }
+  });
+  const moverFoto = async (k, desde, hasta) => {
+    if (await esperarSubidaFoto()) return;
+    leer();
+    moverEn(lista[k].fotos, desde, hasta);
+    guardarYRepintar('Orden guardado');
+  };
+  f.querySelectorAll('[data-mover-foto]').forEach(b => b.onclick = () => {
+    const [k, j, d] = b.dataset.moverFoto.split('/').map(Number);
+    moverFoto(k, j, j + d);
+  });
+  f.querySelectorAll('[data-fotos-taller]').forEach(caja => {
+    const k = Number(caja.dataset.fotosTaller);
+    arrastrarParaOrdenar(caja.querySelector('.galeria-editar'), (desde, hasta) => moverFoto(k, desde, hasta));
   });
 
   // Varias fotos a la vez, una tras otra, con su avance
@@ -1324,6 +1364,81 @@ function pintarPagina(pag, guardados, orig, gals) {
   });
 }
 
+/** Cambiar de lugar las fotos de una lista arrastrándolas: con el mouse, o en el celular dejando
+    el dedo apretado un momento sobre la foto. alSoltar(desde, hasta) recibe las posiciones. */
+function arrastrarParaOrdenar(ul, alSoltar) {
+  if (!ul || ul.children.length < 2) return;
+  ul.classList.add('ordenable');
+  ul.querySelectorAll('img').forEach(i => { i.draggable = false; });
+  let activo = false;
+  ul.addEventListener('contextmenu', (e) => { if (e.target.closest('li')) e.preventDefault(); });
+  // En el celular, una vez que la foto "se levanta", el dedo ya no mueve la página
+  ul.addEventListener('touchmove', (e) => { if (activo) e.preventDefault(); }, { passive: false });
+  ul.addEventListener('pointerdown', (e) => {
+    const li = e.target.closest('li');
+    if (!li || e.button > 0 || e.target.closest('button, a, input, label')) return;
+    const items = () => [...ul.children];
+    const desde = items().indexOf(li);
+    const x0 = e.clientX, y0 = e.clientY;
+    const tactil = e.pointerType === 'touch';
+    let fantasma = null, ultimo = null, desplazar = 0;
+    // Cerca del borde de arriba o de abajo de la pantalla, la página se mueve sola
+    const reordenar = () => {
+      const otro = document.elementFromPoint(ultimo.clientX, ultimo.clientY)?.closest('li');
+      if (!otro || otro === li || otro.parentElement !== ul) return;
+      const lista = items();
+      ul.insertBefore(li, lista.indexOf(otro) > lista.indexOf(li) ? otro.nextSibling : otro);
+    };
+    const bordes = () => {
+      const y = ultimo.clientY, borde = 70;
+      const v = y < borde ? -(borde - y) / 4 : y > innerHeight - borde ? (y - innerHeight + borde) / 4 : 0;
+      if (v) { scrollBy(0, v); reordenar(); }
+    };
+    const empezar = () => {
+      activo = true;
+      desplazar = setInterval(() => ultimo && bordes(), 16);
+      const r = li.getBoundingClientRect();
+      fantasma = li.cloneNode(true);
+      fantasma.className = 'foto-fantasma';
+      Object.assign(fantasma.style, { width: r.width + 'px', height: r.height + 'px', left: r.left + 'px', top: r.top + 'px' });
+      fantasma.dataset.dx = x0 - r.left; fantasma.dataset.dy = y0 - r.top;
+      document.body.appendChild(fantasma);
+      li.classList.add('arrastrando');
+      navigator.vibrate?.(25);
+    };
+    const espera = tactil ? setTimeout(empezar, 280) : 0;
+    const mover = (ev) => {
+      if (!activo) {
+        if (Math.hypot(ev.clientX - x0, ev.clientY - y0) < 8) return;
+        if (tactil) return terminar(); // se movió antes de tiempo: está bajando la página
+        empezar();
+      }
+      ev.preventDefault();
+      ultimo = { clientX: ev.clientX, clientY: ev.clientY };
+      fantasma.style.left = ev.clientX - fantasma.dataset.dx + 'px';
+      fantasma.style.top = ev.clientY - fantasma.dataset.dy + 'px';
+      reordenar();
+    };
+    const terminar = () => {
+      clearTimeout(espera);
+      clearInterval(desplazar);
+      document.removeEventListener('pointermove', mover);
+      document.removeEventListener('pointerup', terminar);
+      document.removeEventListener('pointercancel', terminar);
+      if (!activo) return;
+      activo = false;
+      fantasma.remove();
+      li.classList.remove('arrastrando');
+      const hasta = items().indexOf(li);
+      if (hasta !== desde) alSoltar(desde, hasta);
+    };
+    document.addEventListener('pointermove', mover);
+    document.addEventListener('pointerup', terminar);
+    document.addEventListener('pointercancel', terminar);
+  });
+}
+const moverEn = (lista, desde, hasta) => lista.splice(hasta, 0, lista.splice(desde, 1)[0]);
+
 /** Lista de fotos para subir varias, ordenarlas y quitarlas. Todo se guarda apenas cambia.
     guardar(nueva) recibe la lista nueva, o null para volver a las originales.
     minimo: 1 cuando el lugar no puede quedar sin foto (al quitar la última vuelve la original). */
@@ -1333,7 +1448,7 @@ function editorFotos(caja, { lista: actual, originales, guardar: guardarLista, m
   const hayCambios = cambiada ?? !esOriginal(lista);
   const unaOriginal = originales.length === 1;
   caja.innerHTML = `
-    <p class="ayuda-chica">${lista.length > 1 ? 'Aparecen en este orden; con las flechas las mueves. Las fotos nuevas quedan al principio.' : lista.length ? '' : 'Todavía no hay fotos aquí. Sube las que quieras.'} ${ayuda} Todo se guarda solo.</p>
+    <p class="ayuda-chica">${lista.length > 1 ? 'Aparecen en este orden. Para cambiar una de lugar, arrástrala (en el celular, deja el dedo apretado sobre ella y muévela) o usa las flechas. Las fotos nuevas quedan al principio.' : lista.length ? '' : 'Todavía no hay fotos aquí. Sube las que quieras.'} ${ayuda} Todo se guarda solo.</p>
     ${lista.length > 1 ? `<p class="etiqueta-campo">Fotos <span class="contador">${lista.length}</span></p>` : ''}
     <ul class="fotos-lista galeria-editar">${lista.map((f, j) => `<li><img src="${esc(NM.foto(f))}" alt="Foto ${j + 1}" loading="lazy">
       ${lista.length > 1 ? `<span class="foto-num">${j + 1}</span>` : ''}
@@ -1364,6 +1479,11 @@ function editorFotos(caja, { lista: actual, originales, guardar: guardarLista, m
     if (await esperarSubidaFoto()) return;
     const [j, d] = b.dataset.mover.split('/').map(Number);
     [lista[j], lista[j + d]] = [lista[j + d], lista[j]];
+    guardar(lista, 'Orden guardado');
+  });
+  arrastrarParaOrdenar(caja.querySelector('.galeria-editar'), async (desde, hasta) => {
+    if (await esperarSubidaFoto()) return;
+    moverEn(lista, desde, hasta);
     guardar(lista, 'Orden guardado');
   });
   caja.querySelectorAll('[data-quitar]').forEach(b => b.onclick = async () => {

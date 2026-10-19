@@ -60,6 +60,69 @@ const avance = (prog, c) => {
   return c.lecciones.length ? Math.round(100 * hechas.filter(i => i < c.lecciones.length).length / c.lecciones.length) : 0;
 };
 
+const carpeta = (prog) => (c) => {
+  const p = avance(prog, c);
+  return `<a class="tarjeta carpeta-tarjeta" href="aula?curso=${encodeURIComponent(c.id)}">
+    <div class="img"><img src="${esc(NM.imagen(c))}" alt="" loading="lazy">
+      <span class="chip chip-carpeta">${ICO.carpeta} Carpeta del curso</span></div>
+    <div class="cuerpo">
+      <h3>${esc(c.titulo)}</h3>
+      <p class="contenido-carpeta">${ICO.video} ${c.lecciones.length} videos <span>·</span> ${ICO.pdf} ${c.materiales.length} materiales</p>
+      <div class="barra" aria-label="Avance ${p}%"><span style="width: ${p}%"></span></div>
+      <div class="pie-tarjeta"><span class="nota">${p}% completado</span><span class="flecha">${p ? 'Continuar' : 'Abrir carpeta'} </span></div>
+    </div>
+  </a>`;
+};
+
+// Sin tildes ni mayúsculas, para buscar "confeccion" y encontrar "Confección"
+const normal = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+/** Mis carpetas como biblioteca: agrupadas por categoría, con botones para ver una sola
+    y un buscador que encuentra videos por su nombre o el de su curso. */
+function biblioteca(cursos, prog) {
+  NM.ordenarCursos(cursos);
+  const grupos = NM.porCategoria(cursos);
+  const videos = cursos.reduce((n, c) => n + c.lecciones.length, 0);
+  const conFiltros = grupos.length > 1;
+  const conBuscador = cursos.length > 1 || videos > 8;
+  return `
+    ${conBuscador ? `<label class="buscador"><span class="sr">Buscar un video</span><input type="search" id="buscar" placeholder="Busca un video o un curso" autocomplete="off"></label>` : ''}
+    ${conFiltros ? `<nav class="filtros" aria-label="Categorías de mis cursos">
+      <button type="button" data-filtro="" aria-pressed="true">Todos <small>${cursos.length}</small></button>
+      ${grupos.map(g => `<button type="button" data-filtro="${g.id}" aria-pressed="false">${esc(g.nombre)} <small>${g.cursos.length}</small></button>`).join('')}
+    </nav>` : ''}
+    <div id="resultados" hidden></div>
+    <div id="carpetas">${conFiltros
+      ? grupos.map(g => `<div class="nivel-grupo" data-categoria="${g.id}"><h3 class="hilo">${esc(g.nombre)}</h3>
+          <div class="tarjetas">${g.cursos.map(carpeta(prog)).join('')}</div></div>`).join('')
+      : `<div class="tarjetas">${cursos.map(carpeta(prog)).join('')}</div>`}</div>`;
+}
+
+function activarBiblioteca(cursos) {
+  let filtro = '';
+  const buscar = document.getElementById('buscar');
+  const resultados = document.getElementById('resultados');
+  const carpetas = document.getElementById('carpetas');
+  const pintar = () => {
+    document.querySelectorAll('[data-filtro]').forEach(b => b.setAttribute('aria-pressed', b.dataset.filtro === filtro));
+    document.querySelectorAll('[data-categoria]').forEach(s => { s.hidden = !!filtro && s.dataset.categoria !== filtro; });
+    const q = normal(buscar?.value.trim());
+    carpetas.hidden = !!q;
+    resultados.hidden = !q;
+    if (!q) return;
+    const enCategoria = cursos.filter(c => !filtro || NM.categoria(c).id === filtro);
+    const hallados = enCategoria.flatMap(c => c.lecciones.map((l, j) => ({ c, l, j }))
+      .filter(({ c, l }) => normal(l.titulo).includes(q) || normal(c.titulo).includes(q)));
+    resultados.innerHTML = hallados.length
+      ? `<p class="nota">${hallados.length} ${hallados.length === 1 ? 'video encontrado' : 'videos encontrados'}</p>
+        <ul class="resultados-videos">${hallados.map(({ c, l, j }) => `<li><a href="aula?curso=${encodeURIComponent(c.id)}&clase=${j + 1}">${ICO.video}
+          <span><b>Clase ${j + 1}: ${esc(l.titulo)}</b><span class="nota">${esc(c.titulo)} · ${esc(NM.categoria(c).nombre)}</span></span></a></li>`).join('')}</ul>`
+      : '<p class="vacio">No encontramos videos con esa palabra. Prueba con otra.</p>';
+  };
+  document.querySelectorAll('[data-filtro]').forEach(b => b.onclick = () => { filtro = b.dataset.filtro; pintar(); });
+  buscar?.addEventListener('input', pintar);
+}
+
 function misCarpetas(u, cursos, prog, aviso = '') {
   main.innerHTML = `
   <section class="banda">
@@ -71,21 +134,10 @@ function misCarpetas(u, cursos, prog, aviso = '') {
       ${aviso}
       <h2 class="hilo">Mis carpetas</h2>
       <p class="nota">Cada curso que compras tiene su carpeta exclusiva con los videos y materiales. Solo tú puedes abrirla.</p>
-      ${cursos.length ? `<div class="tarjetas" style="margin-top: 24px">${cursos.map(c => {
-        const p = avance(prog, c);
-        return `<a class="tarjeta carpeta-tarjeta" href="aula?curso=${encodeURIComponent(c.id)}">
-          <div class="img"><img src="${esc(NM.imagen(c))}" alt="" loading="lazy">
-            <span class="chip chip-carpeta">${ICO.carpeta} Carpeta del curso</span></div>
-          <div class="cuerpo">
-            <h3>${esc(c.titulo)}</h3>
-            <p class="contenido-carpeta">${ICO.video} ${c.lecciones.length} videos <span>·</span> ${ICO.pdf} ${c.materiales.length} materiales</p>
-            <div class="barra" aria-label="Avance ${p}%"><span style="width: ${p}%"></span></div>
-            <div class="pie-tarjeta"><span class="nota">${p}% completado</span><span class="flecha">${p ? 'Continuar' : 'Abrir carpeta'} </span></div>
-          </div>
-        </a>`;
-      }).join('')}</div>` : `<p class="vacio">Todavía no tienes cursos. <a href="cursos-online">Ver cursos online</a></p>`}
+      ${cursos.length ? `<div class="biblioteca">${biblioteca(cursos, prog)}</div>` : `<p class="vacio">Todavía no tienes cursos. <a href="cursos-online">Ver cursos online</a></p>`}
     </div>
   </section>`;
+  if (cursos.length) activarBiblioteca(cursos);
   document.getElementById('salir').onclick = async () => { await nube.salir(); history.replaceState(null, '', 'aula'); render(); };
 }
 

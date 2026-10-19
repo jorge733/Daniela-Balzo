@@ -87,8 +87,8 @@ body[data-pagina="panel"] .pie { display: none; }
 .paso .contador { margin-left: auto; font: 600 .9rem var(--f-texto); font-stretch: 100%; color: var(--gris); }
 .paso label { display: grid; gap: 6px; font-weight: 600; }
 .paso label small { font-weight: 400; color: var(--gris); font-size: .9rem; }
-.paso input:not([type=checkbox]):not([type=file]), .paso textarea { font: 400 1.05rem var(--f-texto); padding: 13px 14px; border: 1.5px solid #cdbfe0; border-radius: 8px; background: #fff; color: var(--tinta); width: 100%; }
-.paso input:focus, .paso textarea:focus { outline: none; border-color: var(--morado-2); box-shadow: 0 0 0 3px var(--lila); }
+.paso input:not([type=checkbox]):not([type=file]), .paso textarea, .paso select { font: 400 1.05rem var(--f-texto); padding: 13px 14px; border: 1.5px solid #cdbfe0; border-radius: 8px; background: #fff; color: var(--tinta); width: 100%; }
+.paso input:focus, .paso textarea:focus, .paso select:focus { outline: none; border-color: var(--morado-2); box-shadow: 0 0 0 3px var(--lila); }
 .paso textarea { resize: vertical; min-height: 110px; }
 .paso .ayuda-chica { margin: -8px 0 0; }
 .campo-precio { display: flex; align-items: center; border: 1.5px solid #cdbfe0; border-radius: 8px; max-width: 240px; background: #fff; }
@@ -208,6 +208,12 @@ body[data-pagina="panel"] .pie { display: none; }
 .galeria-editar .foto-controles { position: absolute; left: 6px; right: 6px; bottom: 6px; display: flex; justify-content: space-between; }
 .fotos-lista.galeria-editar .icono { position: static; width: 36px; height: 36px; }
 .galeria-editar .icono:disabled { opacity: 0; pointer-events: none; }
+/* Arrastrar para ordenar */
+.ordenable li { cursor: grab; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.ordenable li.arrastrando { opacity: .35; outline: 3px dashed var(--morado-2); outline-offset: -3px; }
+.foto-fantasma { position: fixed; z-index: 200; list-style: none; margin: 0; border-radius: 10px; overflow: hidden; pointer-events: none; cursor: grabbing; box-shadow: 0 14px 34px rgba(30, 10, 60, .4); transform: rotate(-3deg) scale(1.05); }
+.foto-fantasma img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.foto-fantasma .foto-controles, .foto-fantasma .foto-num { display: none; }
 .botones-fila { display: flex; flex-wrap: wrap; gap: 10px; }
 #agregar-taller { justify-self: start; }
 

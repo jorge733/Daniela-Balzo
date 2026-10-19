@@ -5,11 +5,7 @@
   const { CONTACTO, esc } = NM;
 
   // Submenú de Patrones: cada una lleva a su sección en patrones.html
-  const CATEGORIAS_PATRONES = [
-    ['vestuario-femenino', 'Vestuario femenino'], ['vestuario-infantil', 'Vestuario infantil'],
-    ['vestuario-masculino', 'Vestuario masculino'], ['accesorios', 'Accesorios'],
-    ['decoracion-hogar', 'Decoración de hogar'], ['especial-fiestas', 'Especial fiestas']
-  ];
+  const CATEGORIAS_PATRONES = NM.CATEGORIAS.map(k => [k.id, k.nombre]);
 
   const enlace = (href, texto, clave, extra = '') =>
     `<a href="${href}"${clave === pagina ? ' aria-current="page"' : ''}${extra}>${texto}</a>`;
