@@ -16,9 +16,9 @@
   --linea: #e3d9ef;
   --blanco: #ffffff;
   --ok: #1d7a4f;
-  /* Fondo de las portadas: la textura "iso negro" de Daniela (assets/img/textura.svg), que se mueve.
+  /* Fondo de las portadas: la textura "iso morado" de Daniela (assets/img/textura.svg), que se mueve.
      El tamaño del dibujo y el recorrido de la animación tienen que coincidir para que no se note la unión. */
-  --negro: #2c2e35;
+  --negro: #151a37;        /* fondo del "iso morado" */
   --textura: url("../img/textura.svg");
   --textura-ancho: 626px;
   --textura-alto: 300px;
@@ -134,7 +134,7 @@ li::marker { color: var(--rosa-fuerte); }
 
 /* ---------- Portada del inicio ---------- */
 .portada { position: relative; background: var(--negro); color: #fff; text-align: center; padding-block: 64px 56px; overflow: hidden; isolation: isolate; }
-.portada::before, .cabeza::before { content: ""; position: absolute; inset: 0; background: var(--textura) 0 0 / var(--textura-ancho) var(--textura-alto) repeat; opacity: .75; z-index: -1; }
+.portada::before, .cabeza::before { content: ""; position: absolute; inset: 0; background: var(--textura) 0 0 / var(--textura-ancho) var(--textura-alto) repeat; opacity: .55; z-index: -1; }
 .portada .logo-grande { width: 132px; height: 132px; border-radius: 50%; object-fit: cover; margin: 0 auto 22px; border: 3px solid var(--rosa); box-shadow: 0 10px 30px rgba(0,0,0,.35); }
 .portada h1 { font: 700 clamp(2.2rem, 6vw, 3.6rem)/1.05 var(--f-texto); letter-spacing: .2em; margin: 0 0 14px; padding-left: .2em; }
 .portada .bajada { font-family: var(--f-titulo); font-stretch: 75%; font-size: clamp(1.15rem, 2.6vw, 1.45rem); line-height: 1.45; opacity: .92; margin: 0 auto 28px; }
@@ -153,7 +153,7 @@ li::marker { color: var(--rosa-fuerte); }
 .banda-lila { background: var(--lila); }
 .banda-suave { background: var(--lila-suave); }
 .banda-morada { background: var(--negro); color: #fff; position: relative; isolation: isolate; overflow: hidden; }
-.banda-morada::before { content: ""; position: absolute; inset: 0; background: var(--textura) 0 0 / var(--textura-ancho) var(--textura-alto) repeat; opacity: .5; z-index: -1; }
+.banda-morada::before { content: ""; position: absolute; inset: 0; background: var(--textura) 0 0 / var(--textura-ancho) var(--textura-alto) repeat; opacity: .38; z-index: -1; }
 .banda-morada a:not(.btn) { color: var(--rosa); }
 .categorias { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 26px; }
 .categorias a { padding: 7px 16px; border: 2px solid rgba(255, 255, 255, .75); border-radius: 999px; color: #fff; font-weight: 600; font-size: .9rem; text-decoration: none; transition: background .2s, color .2s; }
