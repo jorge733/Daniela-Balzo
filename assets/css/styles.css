@@ -489,6 +489,8 @@ p.pendiente { padding: 10px 14px; }
 .filtros button:hover { border-color: var(--morado-2); }
 .filtros button[aria-pressed="true"] { background: var(--morado-2); border-color: var(--morado-2); color: #fff; }
 .filtros button[aria-pressed="true"] small { background: rgba(255, 255, 255, .2); color: #fff; }
+.volver-categorias { display: inline-block; margin-bottom: 18px; color: var(--morado-2); font-weight: 600; text-decoration: none; }
+.volver-categorias:hover { text-decoration: underline; }
 .biblioteca { margin-top: 28px; }
 .biblioteca .filtros { justify-content: flex-start; margin-bottom: 32px; }
 .biblioteca .buscador { margin: 0 0 16px; }

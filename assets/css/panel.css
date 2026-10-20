@@ -62,6 +62,10 @@ body[data-pagina="panel"] .pie { display: none; }
 
 /* Lista de cursos */
 .lista-cursos { display: grid; gap: 10px; }
+.grupo-cursos { margin-top: 28px; }
+.grupo-cursos h3 { font-size: 1.3rem; margin: 0; }
+.grupo-cursos h3 small { font: 600 .85rem var(--f-texto); color: var(--gris); margin-left: 6px; }
+.grupo-vacio { margin: 0; padding: 14px 16px; border: 1.5px dashed var(--linea); border-radius: 12px; color: var(--gris); }
 .curso-fila { display: grid; grid-template-columns: 96px 1fr auto; gap: 16px; align-items: center; background: #fff; border-radius: 12px; padding: 12px; text-decoration: none; color: var(--tinta); box-shadow: 0 0 0 1px var(--linea); transition: box-shadow .15s; }
 .curso-fila:hover { box-shadow: 0 0 0 2px var(--morado-2); }
 .curso-fila img { width: 96px; height: 96px; object-fit: cover; border-radius: 8px; }

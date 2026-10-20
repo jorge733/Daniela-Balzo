@@ -21,6 +21,7 @@ if (!curso || !curso.publicado) {
     <section class="banda banda-lila">
       <div class="wrap dos">
         <div>
+          <a class="volver-categorias" href="cursos-online#${NM.categoria(curso).id}">← ${NM.categoria(curso).id === 'otros' ? 'Más cursos online' : 'Más cursos de ' + esc(NM.categoria(curso).nombre)}</a>
           <span class="etiqueta">Curso online · Nivel ${NM.nivel(curso).nombre.toLowerCase()} · ${curso.lecciones.length} clases en video</span>
           <h1>${esc(curso.titulo)}</h1>
           <p>${esc(curso.resumen)}</p>

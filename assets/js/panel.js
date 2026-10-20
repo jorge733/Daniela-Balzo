@@ -231,42 +231,53 @@ async function inicio() {
       <a class="accion" href="#paginas">${ICO.paginas}<b>Cambiar mis páginas</b><span>Textos y fotos de cada página, tu portafolio y tus datos de contacto.</span></a>
       <a class="accion" href="#ventas">${ICO.ventas}<b>Ver mis ventas</b><span>Quién compró, qué curso y cuándo.</span></a>
     </div>`);
-  document.getElementById('accion-nuevo').onclick = crearCurso;
+  document.getElementById('accion-nuevo').onclick = () => crearCurso();
 }
 
 const fechaDe = (v) => v.fecha && v.fecha.toDate ? v.fecha.toDate() : new Date(v.fecha || 0);
 
 // ---------- Lista de cursos ----------
+// Agrupados por categoría (las mismas de Patrones), cada una con su botón para crear un curso dentro.
 async function cursos() {
   cargando('cursos');
   const lista = await nube.todosLosCursos();
-  marco('cursos', `
-    <div class="panel-barra">
-      <h2 class="panel-titulo">Mis cursos online en video</h2>
-      <button class="btn" type="button" id="nuevo">${ICO.mas} Crear curso nuevo</button>
-    </div>
-    <p class="ayuda">${ICO.ayuda}<span>Haz clic en un curso para cambiarlo o subirle videos. Solo los cursos marcados como <b>"En tu página"</b> los pueden ver y comprar tus estudiantes.</span></p>
-    ${lista.length ? `<div class="lista-cursos">${lista.map(c => {
-      const con = c.lecciones.filter(l => l.video).length;
-      return `<a class="curso-fila" href="#curso/${encodeURIComponent(c.id)}">
+  const fila = (c) => {
+    const con = c.lecciones.filter(l => l.video).length;
+    return `<a class="curso-fila" href="#curso/${encodeURIComponent(c.id)}">
         <img src="${esc(NM.imagen(c))}" alt="">
         <div>
           <b>${esc(c.titulo)}</b>
-          <span class="curso-datos">${esc(NM.categoria(c).nombre)} · Nivel ${NM.nivel(c).nombre.toLowerCase()} · ${clp(c.precio)} · Videos: ${con} de ${c.lecciones.length}</span>
+          <span class="curso-datos">Nivel ${NM.nivel(c).nombre.toLowerCase()} · ${clp(c.precio)} · Videos: ${con} de ${c.lecciones.length}</span>
           ${c.publicado ? `<span class="estado estado-ok">${ICO.ok} En tu página</span>` : '<span class="estado">Oculto (todavía no se muestra)</span>'}
         </div>
         <span class="btn btn-borde btn-chico">Abrir</span>
       </a>`;
-    }).join('')}</div>` : `<div class="vacio"><p>Todavía no tienes cursos online.</p><button class="btn" type="button" id="nuevo-vacio">${ICO.mas} Crear mi primer curso</button></div>`}`);
-  document.getElementById('nuevo').onclick = crearCurso;
-  document.getElementById('nuevo-vacio')?.addEventListener('click', crearCurso);
+  };
+  const grupos = [...NM.CATEGORIAS, { id: 'otros', nombre: 'Otros cursos (sin categoría)' }]
+    .map(k => ({ ...k, cursos: lista.filter(c => NM.categoria(c).id === k.id) }))
+    .filter(g => g.id !== 'otros' || g.cursos.length);
+  marco('cursos', `
+    <div class="panel-barra">
+      <h2 class="panel-titulo">Mis cursos online en video</h2>
+      <button class="btn" type="button" data-crear="">${ICO.mas} Crear curso nuevo</button>
+    </div>
+    <p class="ayuda">${ICO.ayuda}<span>Tus cursos están ordenados por categoría, igual que en tu página. Dentro de cada categoría puedes crear todos los cursos que quieras con <b>"Crear curso aquí"</b>. Haz clic en un curso para cambiarlo o subirle videos. Solo los cursos marcados como <b>"En tu página"</b> los pueden ver y comprar tus estudiantes.</span></p>
+    ${grupos.map(g => `<section class="grupo-cursos">
+      <div class="panel-barra">
+        <h3>${esc(g.nombre)} <small>${g.cursos.length === 1 ? '1 curso' : g.cursos.length + ' cursos'}</small></h3>
+        ${g.id !== 'otros' ? `<button class="btn btn-borde btn-chico" type="button" data-crear="${g.id}">${ICO.mas} Crear curso aquí</button>` : ''}
+      </div>
+      ${g.cursos.length ? `<div class="lista-cursos">${g.cursos.map(fila).join('')}</div>` : '<p class="grupo-vacio">Todavía no hay cursos en esta categoría.</p>'}
+    </section>`).join('')}`);
+  document.querySelectorAll('[data-crear]').forEach(b => b.onclick = () => crearCurso(b.dataset.crear));
 }
 
-async function crearCurso() {
+/** Crea un curso oculto (en la categoría indicada, si viene) y abre su editor. */
+async function crearCurso(categoria = '') {
   const cursos = await nube.todosLosCursos();
   const id = 'curso-' + Date.now().toString(36);
-  await nube.guardarCurso({ id, titulo: 'Mi curso nuevo', resumen: '', requisitos: '', nivel: 'basico', precio: 30000, imagen: 'cursos-05.jpg',
-    publicado: false, orden: cursos.length, lecciones: [{ titulo: 'Clase 1', duracion: '' }], materiales: [] });
+  await nube.guardarCurso({ id, titulo: 'Mi curso nuevo', resumen: '', requisitos: '', nivel: 'basico', categoria,
+    precio: 30000, imagen: 'cursos-05.jpg', publicado: false, orden: cursos.length, lecciones: [{ titulo: 'Clase 1', duracion: '' }], materiales: [] });
   avisar('Curso creado. Ahora complétalo.');
   location.hash = 'curso/' + id;
 }
@@ -309,7 +320,7 @@ function pintarEditor(c) {
             ${NM.CATEGORIAS.map(k => `<option value="${k.id}" ${c.categoria === k.id ? 'selected' : ''}>${k.nombre}</option>`).join('')}
             <option value="" ${NM.categoria(c).id === 'otros' ? 'selected' : ''}>Otros cursos (sin categoría)</option>
           </select>
-          <small>Las mismas de Patrones. En Cursos online y en Mis cursos los cursos se agrupan por categoría.</small></label>
+          <small>Las mismas de Patrones. En Cursos online, el curso aparece dentro de esta categoría. Puedes tener todos los cursos que quieras en cada una.</small></label>
         <label>Precio
           <span class="campo-precio"><span>$</span><input name="precio" inputmode="numeric" value="${precioTexto(c.precio)}" required></span>
           <small>En pesos chilenos. Mercado Pago descuenta su comisión de cada venta.</small></label>
@@ -1156,9 +1167,13 @@ const PAGINAS = [
       ['Más fotos (opcional)', [['cursos_galeriaTitulo', 'Título de la sección', 'Si no subes fotos, esta sección no se muestra.'], ['galeria:cursos', '']]]
     ] },
   { id: 'cursos-online', nombre: 'Cursos online', archivo: 'cursos-online', icono: ICO.cursos,
-    descripcion: 'El texto de arriba y los 3 pasos de "¿Cómo funciona?".',
+    descripcion: 'El texto de arriba, la foto y el texto de cada categoría, y los 3 pasos de "¿Cómo funciona?".',
     grupos: [
       ['Arriba de la página', [['online_etiqueta', 'Etiqueta chica'], ['onlineTitulo', 'Título', 'También se ve en el inicio.'], ['onlineTexto', 'Texto']]],
+      ...[['femenino', 'Vestuario femenino'], ['infantil', 'Vestuario infantil'], ['masculino', 'Vestuario masculino'],
+        ['accesorios', 'Accesorios'], ['hogar', 'Decoración de hogar'], ['fiestas', 'Especial fiestas']].map(([id, nombre]) =>
+        ['Categoría: ' + nombre, [[`online_${id}Foto`, 'Foto de la categoría'],
+          [`online_${id}Texto`, 'Texto', 'Los cursos de cada categoría se agregan en <a href="#cursos">Mis cursos online</a>.']]]),
       ['¿Cómo funciona?', [['online_pasosTitulo', 'Título'], ['online_paso1Titulo', 'Paso 1: título'], ['online_paso1Texto', 'Paso 1: texto'],
         ['online_paso2Titulo', 'Paso 2: título'], ['online_paso2Texto', 'Paso 2: texto'], ['online_paso3Titulo', 'Paso 3: título'], ['online_paso3Texto', 'Paso 3: texto']]]
     ] },

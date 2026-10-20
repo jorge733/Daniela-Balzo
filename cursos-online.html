@@ -35,9 +35,49 @@
     </div>
   </header>
 
-  <section class="banda">
+  <section class="banda" id="catalogo">
     <div class="wrap">
-      <div class="tarjetas" id="catalogo"></div>
+      <!-- Primero las categorías (las mismas de Patrones), cada una con su foto; al tocar una
+           se ven sus cursos (cursos-online#accesorios). Fotos y textos se cambian en el panel. -->
+      <div class="tarjetas" id="categorias">
+        <a class="tarjeta" href="#vestuario-femenino" data-categoria="vestuario-femenino">
+          <div class="img"><img data-texto="online_femeninoFoto" data-tipo="foto" src="assets/img/vestuario-13.jpg" alt="" loading="lazy"></div>
+          <div class="cuerpo"><span class="duracion" data-cuenta></span><h3>Vestuario femenino</h3>
+            <p data-texto="online_femeninoTexto">Blusas, vestidos, faldas y pantalones, paso a paso.</p>
+            <div class="pie-tarjeta"><span class="flecha">Ver cursos </span></div></div>
+        </a>
+        <a class="tarjeta" href="#vestuario-infantil" data-categoria="vestuario-infantil">
+          <div class="img"><img data-texto="online_infantilFoto" data-tipo="foto" src="assets/img/vestuario-23.jpg" alt="" loading="lazy"></div>
+          <div class="cuerpo"><span class="duracion" data-cuenta></span><h3>Vestuario infantil</h3>
+            <p data-texto="online_infantilTexto">Ropa para niñas y niños, desde poleras hasta polerones.</p>
+            <div class="pie-tarjeta"><span class="flecha">Ver cursos </span></div></div>
+        </a>
+        <a class="tarjeta" href="#vestuario-masculino" data-categoria="vestuario-masculino">
+          <div class="img"><img data-texto="online_masculinoFoto" data-tipo="foto" src="assets/img/vestuario-15.jpg" alt="" loading="lazy"></div>
+          <div class="cuerpo"><span class="duracion" data-cuenta></span><h3>Vestuario masculino</h3>
+            <p data-texto="online_masculinoTexto">Camisas, polerones y chaquetas.</p>
+            <div class="pie-tarjeta"><span class="flecha">Ver cursos </span></div></div>
+        </a>
+        <a class="tarjeta" href="#accesorios" data-categoria="accesorios">
+          <div class="img"><img data-texto="online_accesoriosFoto" data-tipo="foto" src="assets/img/accesorios-08.jpg" alt="" loading="lazy"></div>
+          <div class="cuerpo"><span class="duracion" data-cuenta></span><h3>Accesorios</h3>
+            <p data-texto="online_accesoriosTexto">Bananos, bolsos, estuches y más.</p>
+            <div class="pie-tarjeta"><span class="flecha">Ver cursos </span></div></div>
+        </a>
+        <a class="tarjeta" href="#decoracion-hogar" data-categoria="decoracion-hogar">
+          <div class="img"><img data-texto="online_hogarFoto" data-tipo="foto" src="assets/img/accesorios-30.jpg" alt="" loading="lazy"></div>
+          <div class="cuerpo"><span class="duracion" data-cuenta></span><h3>Decoración de hogar</h3>
+            <p data-texto="online_hogarTexto">Cojines, pufs y otros proyectos para tu casa.</p>
+            <div class="pie-tarjeta"><span class="flecha">Ver cursos </span></div></div>
+        </a>
+        <a class="tarjeta" href="#especial-fiestas" data-categoria="especial-fiestas">
+          <div class="img"><img data-texto="online_fiestasFoto" data-tipo="foto" src="assets/img/vestuario-30.jpg" alt="" loading="lazy"></div>
+          <div class="cuerpo"><span class="duracion" data-cuenta></span><h3>Especial fiestas</h3>
+            <p data-texto="online_fiestasTexto">Trajes y vestidos para celebraciones y fechas especiales.</p>
+            <div class="pie-tarjeta"><span class="flecha">Ver cursos </span></div></div>
+        </a>
+      </div>
+      <div id="categoria" hidden></div>
     </div>
   </section>
 
@@ -68,33 +108,55 @@
           <div class="pie-tarjeta"><span class="precio">${NM.clp(c.precio)}</span><span class="flecha">Ver curso </span></div>
         </div>
       </a>`;
-  // Agrupados por categoría (las mismas de Patrones) y, dentro, de lo más simple a lo más complejo.
-  // Con más de una categoría, arriba van botones para ver solo una (también con cursos-online#accesorios).
+  // Cantidad de cursos en cada categoría; las que todavía no tienen dicen "Pronto".
   const grupos = NM.porCategoria(cursos);
-  const catalogo = document.getElementById("catalogo");
-  catalogo.outerHTML = !cursos.length
-    ? "<p class=\"vacio\">Pronto habrá cursos disponibles.</p>"
-    : grupos.length === 1
-      ? `<div class="tarjetas">${cursos.map(tarjeta).join("")}</div>`
-      : `<nav class="filtros" aria-label="Categorías de cursos">
-          <button type="button" data-filtro="" aria-pressed="true">Todos <small>${cursos.length}</small></button>
-          ${grupos.map(g => `<button type="button" data-filtro="${g.id}" aria-pressed="false">${NM.esc(g.nombre)} <small>${g.cursos.length}</small></button>`).join("")}
-        </nav>
-        ${grupos.map(g => `<div class="nivel-grupo" id="${g.id}" data-categoria="${g.id}">
-          <h2 class="hilo">${NM.esc(g.nombre)}</h2>
-          <div class="tarjetas">${g.cursos.map(tarjeta).join("")}</div>
-        </div>`).join("")}`;
-
-  const filtrar = (id) => {
-    if (!grupos.some(g => g.id === id)) id = "";
-    document.querySelectorAll("[data-filtro]").forEach(b => b.setAttribute("aria-pressed", b.dataset.filtro === id));
-    document.querySelectorAll("[data-categoria]").forEach(s => { s.hidden = !!id && s.dataset.categoria !== id; });
-  };
-  document.querySelectorAll("[data-filtro]").forEach(b => b.onclick = () => {
-    filtrar(b.dataset.filtro);
-    history.replaceState(null, "", b.dataset.filtro ? "#" + b.dataset.filtro : location.pathname);
+  const delGrupo = (id) => grupos.find(g => g.id === id)?.cursos || [];
+  const cuantos = (n) => n === 1 ? "1 curso" : n + " cursos";
+  const lista = document.getElementById("categorias");
+  const zona = document.getElementById("categoria");
+  lista.querySelectorAll("[data-categoria]").forEach(a => {
+    const n = delGrupo(a.dataset.categoria).length;
+    a.querySelector("[data-cuenta]").textContent = n ? cuantos(n) : "Pronto";
   });
-  filtrar(decodeURIComponent(location.hash.slice(1)));
+  // Los cursos sin categoría quedan en una tarjeta "Otros cursos" al final (solo si hay)
+  const otros = delGrupo("otros");
+  if (otros.length) lista.insertAdjacentHTML("beforeend", `
+      <a class="tarjeta" href="#otros" data-categoria="otros">
+        <div class="img"><img src="${NM.esc(NM.imagen(otros[0]))}" alt="" loading="lazy"></div>
+        <div class="cuerpo"><span class="duracion">${cuantos(otros.length)}</span><h3>Otros cursos</h3>
+          <div class="pie-tarjeta"><span class="flecha">Ver cursos </span></div></div>
+      </a>`);
+
+  // Con #accesorios en la dirección se ve esa categoría con todos sus cursos, de lo más simple a lo más complejo
+  const mostrar = () => {
+    const id = decodeURIComponent(location.hash.slice(1));
+    const cat = id && lista.querySelector(`[data-categoria="${CSS.escape(id)}"]`);
+    lista.hidden = !!cat;
+    zona.hidden = !cat;
+    if (!cat) { zona.innerHTML = ""; return; }
+    const enCategoria = delGrupo(id);
+    const texto = cat.querySelector("p[data-texto]");
+    zona.innerHTML = `
+      <a class="volver-categorias" href="cursos-online">← Todas las categorías</a>
+      <div class="encabezado-seccion"><h2 class="hilo">${NM.esc(cat.querySelector("h3").textContent)}</h2>
+        ${texto ? `<p data-texto="${texto.dataset.texto}">${NM.esc(texto.textContent)}</p>` : ""}</div>
+      ${enCategoria.length ? `<div class="tarjetas">${enCategoria.map(tarjeta).join("")}</div>`
+        : `<p class="vacio">Pronto habrá cursos en esta categoría. ¿Te interesa alguno en especial? <a href="contacto">Escríbeme</a>.</p>`}`;
+    zona.querySelector(".volver-categorias").onclick = (e) => {
+      e.preventDefault();
+      history.pushState(null, "", location.pathname);
+      ir();
+    };
+  };
+  // Al cambiar de vista, la página se ubica al comienzo de las tarjetas si quedaron fuera de la pantalla
+  const ir = () => {
+    mostrar();
+    const top = document.getElementById("catalogo").getBoundingClientRect().top;
+    if (top < 0 || top > innerHeight * .6) document.getElementById("catalogo").scrollIntoView({ behavior: "smooth" });
+  };
+  addEventListener("hashchange", ir);
+  addEventListener("popstate", mostrar);
+  if (location.hash) ir(); else mostrar();
 </script>
 </body>
 </html>
