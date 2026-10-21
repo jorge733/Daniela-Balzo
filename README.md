@@ -22,7 +22,7 @@ Prototipo del nuevo sitio web de **Daniela Balzo** (Negra Mora Diseños): clases
 - **Firebase Storage**: videos y materiales. Solo Daniela sube; las alumnas los ven con un enlace temporal (4 horas) que entrega `/api/archivo` después de revisar que compraron el curso. Reglas en `storage.rules`.
 - **Pagos**: los cursos online se compran con cuenta (dan acceso al aula). Las clases presenciales se pagan sin cuenta: quien se inscribe deja nombre, correo y WhatsApp, queda en `inscripciones/` y la venta aparece en el panel con un botón para coordinar el horario. El precio lo pone siempre el servidor (lo guardado en el panel o los valores de `assets/js/datos.js`).
 - **Vercel Functions** (`/api`): crean el pago en Mercado Pago, reciben la notificación (webhook), confirman el pago al volver y firman los enlaces de los videos. Las compras solo las escribe el servidor.
-- **Aviso de ventas**: cada venta nueva (curso online o inscripción a clase) le llega a Daniela por correo con los datos de quien pagó, enviado con Resend (`api/_lib/aviso.js`). Sin `RESEND_API_KEY` el aviso solo queda en el registro de la función.
+- **Correos de cada venta**: cada venta nueva (curso online o inscripción a clase) le llega a Daniela por correo con los datos de quien pagó, y quien pagó recibe un correo de confirmación (si lo responde, le llega a Daniela). Se envían con Resend (`api/_lib/aviso.js`). Sin `RESEND_API_KEY` solo quedan en el registro de la función.
 
 ## Probarlo en local
 
@@ -47,7 +47,7 @@ Sin credenciales de Mercado Pago, el pago se simula con `/api/simular-pago` (sol
 5. Crear la cuenta de Daniela en Authentication y darle acceso al panel con `scripts/crear-admin.mjs`.
 6. Con el dominio ya conectado, actualizar la vista previa al compartir: `node scripts/vista-previa.mjs https://<dominio>` (necesita Chrome y ffmpeg para regenerar la imagen; con `--sin-imagen` solo cambia las direcciones).
 7. Completar lo marcado como pendiente en `terminos.html` y `privacidad.html` y conectar el dominio.
-8. Verificar `negramora.cl` en Resend para que los avisos de venta salgan desde el dominio y no caigan en spam: en Resend, *Domains > Add Domain* con `negramora.cl`. Copiar los registros DNS que muestra (TXT de DKIM, y MX y TXT de SPF en `send`) en la zona DNS de DonWeb (los DNS del dominio están ahí), y esperar a que queden en *Verified*. El dominio no tiene otros registros de correo, así que no se pisa nada. Después, en Vercel, poner `AVISO_REMITENTE=Negra Mora <avisos@negramora.cl>` y volver a publicar. No hace falta crear una casilla de correo: `avisos@` solo envía, y las respuestas le llegan al correo de quien compró. Daniela sigue usando su Gmail.
+8. Verificar `negramora.cl` en Resend para que los avisos de venta salgan desde el dominio y no caigan en spam: en Resend, *Domains > Add Domain* con `negramora.cl`. Copiar los registros DNS que muestra (TXT de DKIM, y MX y TXT de SPF en `send`) en la zona DNS de DonWeb (los DNS del dominio están ahí), y esperar a que queden en *Verified*. El dominio no tiene otros registros de correo, así que no se pisa nada. Después, en Vercel, poner `AVISO_REMITENTE=Negra Mora <avisos@negramora.cl>` y volver a publicar. Sin el dominio verificado, Resend no deja enviar la confirmación a quienes compran (solo el aviso a Daniela). No hace falta crear una casilla de correo: `avisos@` solo envía; las respuestas al aviso le llegan a quien compró y las respuestas a la confirmación, a Daniela. Daniela sigue usando su Gmail.
 
 ## Estructura
 
