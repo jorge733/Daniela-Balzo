@@ -46,7 +46,7 @@ Sin credenciales de Mercado Pago, el pago se simula con `/api/simular-pago` (sol
 4. En Mercado Pago, configurar el webhook a `https://www.negramora.cl/api/webhook-mp` (evento "Pagos").
 5. Crear la cuenta de Daniela en Authentication y darle acceso al panel con `scripts/crear-admin.mjs`.
 6. Con el dominio ya conectado, actualizar la vista previa al compartir: `node scripts/vista-previa.mjs https://<dominio>` (necesita Chrome y ffmpeg para regenerar la imagen; con `--sin-imagen` solo cambia las direcciones).
-7. Cambiar `MODO_PRUEBA` a `false` en `assets/js/datos.js`, completar lo marcado como pendiente en `terminos.html` y `privacidad.html` y conectar el dominio.
+7. Completar lo marcado como pendiente en `terminos.html` y `privacidad.html` y conectar el dominio.
 8. Verificar `negramora.cl` en Resend para que los avisos de venta salgan desde el dominio y no caigan en spam: en Resend, *Domains > Add Domain* con `negramora.cl`. Copiar los registros DNS que muestra (TXT de DKIM, y MX y TXT de SPF en `send`) en la zona DNS de DonWeb (los DNS del dominio están ahí), y esperar a que queden en *Verified*. El dominio no tiene otros registros de correo, así que no se pisa nada. Después, en Vercel, poner `AVISO_REMITENTE=Negra Mora <avisos@negramora.cl>` y volver a publicar. No hace falta crear una casilla de correo: `avisos@` solo envía, y las respuestas le llegan al correo de quien compró. Daniela sigue usando su Gmail.
 
 ## Estructura

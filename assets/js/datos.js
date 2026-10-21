@@ -2,9 +2,6 @@
    Los cursos, cuentas, compras y textos editables viven en Firebase (ver nube.js). */
 
 const NM = (() => {
-  // Mientras sea true, el sitio muestra el aviso de sitio en construcción.
-  const MODO_PRUEBA = true;
-
   // Textos que Daniela puede cambiar desde el panel (sitio/textos). Estos son los valores por defecto
   // de los que arma layout.js; los demás textos de cada página tienen su valor original en el HTML,
   // marcados con data-texto (ver ponerTextos).
@@ -250,7 +247,6 @@ const NM = (() => {
   }
 
   return {
-    MODO_PRUEBA,
     CONTACTO,
     TEXTOS,
     NIVELES,

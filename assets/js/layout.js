@@ -93,7 +93,7 @@
         </div>
       </div>
       <div class="legal">
-        <span>© ${new Date().getFullYear()} Daniela Balzo · Negra Mora Diseños · ${NM.MODO_PRUEBA ? '<span class="sello-prototipo">Sitio en construcción</span> ' : ''}Desarrollado por <a href="https://benedettowebs.vercel.app" target="_blank" rel="noopener">BenedettoWebs</a></span>
+        <span>© ${new Date().getFullYear()} Daniela Balzo · Negra Mora Diseños · Desarrollado por <a href="https://benedettowebs.vercel.app" target="_blank" rel="noopener">BenedettoWebs</a></span>
         <span class="legal-links"><a href="terminos">Términos y condiciones</a> · <a href="privacidad">Privacidad</a> · <a href="panel">Panel</a></span>
       </div>
     </div>
@@ -102,20 +102,7 @@
     <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.5.7 4.8 1.9 6.8L3 29l6.8-2.1c1.9 1 4 1.6 6.2 1.6 7 0 12.7-5.7 12.7-12.7S23 3 16 3zm0 23.2c-2 0-3.9-.6-5.5-1.6l-.4-.2-4 1.2 1.3-3.9-.3-.4a10.4 10.4 0 0 1-1.6-5.6C5.5 9.9 10.2 5.3 16 5.3s10.5 4.6 10.5 10.4S21.8 26.2 16 26.2zm5.8-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.5.1-.2 0-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.8s1.2 3.2 1.4 3.5c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg>
   </a>`;
 
-  let ocultarBanner = false;
-  try { ocultarBanner = sessionStorage.getItem('nm_banner') === 'no'; } catch (e) {}
-  const banner = ocultarBanner || !NM.MODO_PRUEBA ? '' : `
-  <div class="banner-prototipo" role="note">
-    <b>Sitio en construcción</b> Estamos terminando el nuevo sitio de Daniela Balzo, así que algunas secciones pueden cambiar.
-    <button type="button" aria-label="Ocultar aviso">×</button>
-  </div>`;
-
-  document.body.insertAdjacentHTML('afterbegin', banner + barra);
-  const cerrarBanner = document.querySelector('.banner-prototipo button');
-  if (cerrarBanner) cerrarBanner.onclick = () => {
-    cerrarBanner.parentElement.remove();
-    try { sessionStorage.setItem('nm_banner', 'no'); } catch (e) {}
-  };
+  document.body.insertAdjacentHTML('afterbegin', barra);
   document.body.insertAdjacentHTML('beforeend', pie);
 
   // ---------- Textos editables desde el panel ----------

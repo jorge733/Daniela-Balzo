@@ -306,10 +306,6 @@ a.tarjeta:hover .btn { background: var(--morado); border-color: var(--morado); }
 .contacto-lista .ico svg { width: 20px; height: 20px; }
 .contacto-lista small { display: block; color: var(--gris); font-size: .8rem; text-transform: uppercase; letter-spacing: .1em; font-weight: 700; }
 
-/* Aviso de prototipo */
-.aviso { background: #fff4c7; color: #5c4600; font-size: .85rem; text-align: center; padding: 8px 16px; }
-.aviso b { font-weight: 700; }
-
 /* Modal de compra */
 .modal { position: fixed; inset: 0; background: rgba(24, 0, 81, .6); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 90; }
 .modal .caja { background: #fff; width: min(100%, 460px); max-height: 100%; overflow: auto; padding: 30px; border-radius: 8px; box-shadow: 0 30px 60px -20px rgba(0,0,0,.5); }
@@ -412,13 +408,6 @@ table.tabla { width: 100%; border-collapse: collapse; font-size: .95rem; }
 .archivos button:hover { background: var(--lila); }
 .archivos svg { width: 20px; height: 20px; color: var(--morado-2); }
 .archivos .descargar { font-size: .78rem; font-weight: 700; color: var(--morado-2); }
-
-/* ---------- Aviso de prototipo (todo el sitio) ---------- */
-.banner-prototipo { background: var(--rosa); color: var(--morado); font-size: .85rem; text-align: center; padding: 8px 44px 8px 16px; position: relative; line-height: 1.45; }
-.banner-prototipo b { letter-spacing: .12em; text-transform: uppercase; font-size: .75rem; background: var(--morado); color: #fff; padding: 2px 8px; border-radius: 20px; margin-right: 6px; }
-.banner-prototipo button { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: 0; color: var(--morado); font-size: 1.3rem; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; }
-.banner-prototipo button:hover { background: rgba(255,255,255,.5); }
-.sello-prototipo { display: inline-block; border: 1px dashed currentColor; border-radius: 4px; padding: 1px 8px; font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; opacity: .85; }
 
 /* ---------- Animaciones ---------- */
 @keyframes subir { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
