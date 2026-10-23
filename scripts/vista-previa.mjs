@@ -1,6 +1,8 @@
 /* Vista previa al compartir (WhatsApp, Facebook, Instagram, X).
    1. Genera assets/img/compartir.jpg (1200x630) desde scripts/tarjeta-compartir.html con Chrome.
-   2. Agrega o actualiza las etiquetas Open Graph de cada página con su título y descripción.
+   2. Agrega o actualiza las etiquetas Open Graph de cada página con su título y descripción,
+      y la dirección canónica de las páginas que Google puede indexar.
+   3. Genera sitemap.xml con esas páginas.
    Uso: node scripts/vista-previa.mjs [https://dominio]   (al cambiar de dominio, vuelve a correrlo) */
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -8,9 +10,11 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const BASE = (process.argv.slice(2).find(a => !a.startsWith('--')) || 'https://daniela-balzo.vercel.app').replace(/\/$/, '');
+const BASE = (process.argv.slice(2).find(a => !a.startsWith('--')) || 'https://www.negramora.cl').replace(/\/$/, '');
 const IMAGEN = 'assets/img/compartir.jpg';
 const NO_COMPARTIR = ['404.html', 'panel.html'];
+// curso.html cambia según ?id=, así que no lleva una sola dirección canónica
+const SIN_CANONICA = ['curso.html'];
 
 // ---------- 1. Imagen ----------
 const CHROME = [
@@ -37,14 +41,17 @@ const atributo = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace
 const desescapar = (s) => s.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 
 const paginas = (await fs.readdir(RAIZ)).filter(f => f.endsWith('.html') && !NO_COMPARTIR.includes(f));
+const indexables = [];
 for (const archivo of paginas) {
   const ruta = path.join(RAIZ, archivo);
   let html = await fs.readFile(ruta, 'utf8');
   const titulo = desescapar((html.match(/<title>([^<]*)<\/title>/) || [])[1] || 'Daniela Balzo · Negra Mora');
   const desc = desescapar((html.match(/<meta name="description" content="([^"]*)">/) || [])[1] || 'Clases de costura personalizadas desde 2012.');
   const url = BASE + '/' + (archivo === 'index.html' ? '' : archivo.replace(/\.html$/, ''));
+  const canonica = !html.includes('content="noindex"') && !SIN_CANONICA.includes(archivo);
+  if (canonica) indexables.push(url);
   const bloque = `<!-- vista-previa -->
-<meta property="og:type" content="website">
+${canonica ? `<link rel="canonical" href="${url}">\n` : ''}<meta property="og:type" content="website">
 <meta property="og:site_name" content="Daniela Balzo · Negra Mora">
 <meta property="og:locale" content="es_CL">
 <meta property="og:title" content="${atributo(titulo)}">
@@ -63,3 +70,13 @@ for (const archivo of paginas) {
   await fs.writeFile(ruta, html);
 }
 console.log(`Etiquetas en ${paginas.length} páginas, con la dirección ${BASE}`);
+
+// ---------- 3. Sitemap ----------
+const hoy = new Date().toISOString().slice(0, 10);
+const urls = indexables.sort((a, b) => a.length - b.length).map(u => `  <url><loc>${u}</loc><lastmod>${hoy}</lastmod></url>`);
+await fs.writeFile(path.join(RAIZ, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.join('\n')}
+</urlset>
+`);
+console.log(`sitemap.xml con ${indexables.length} páginas`);

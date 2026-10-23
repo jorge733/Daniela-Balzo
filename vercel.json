@@ -4,5 +4,12 @@
     "api/crear-pago.js": {
       "includeFiles": "assets/js/datos.js"
     }
-  }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "(?<sub>.*)\\.vercel\\.app" }],
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }]
+    }
+  ]
 }

@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /panel
+Disallow: /aula
+Disallow: /api/
+
+Sitemap: https://www.negramora.cl/sitemap.xml
