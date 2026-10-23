@@ -317,7 +317,7 @@ function pintarEditor(c) {
         </fieldset>
         <label>Categoría
           <select name="categoria">
-            ${NM.CATEGORIAS.map(k => `<option value="${k.id}" ${c.categoria === k.id ? 'selected' : ''}>${k.nombre}</option>`).join('')}
+            ${NM.CATEGORIAS.map(k => `<option value="${k.id}" ${NM.categoria(c).id === k.id ? 'selected' : ''}>${k.nombre}</option>`).join('')}
             <option value="" ${NM.categoria(c).id === 'otros' ? 'selected' : ''}>Otros cursos (sin categoría)</option>
           </select>
           <small>Las mismas de Patrones. En Cursos online, el curso aparece dentro de esta categoría. Puedes tener todos los cursos que quieras en cada una.</small></label>
@@ -1170,7 +1170,7 @@ const PAGINAS = [
     descripcion: 'El texto de arriba, la foto y el texto de cada categoría, y los 3 pasos de "¿Cómo funciona?".',
     grupos: [
       ['Arriba de la página', [['online_etiqueta', 'Etiqueta chica'], ['onlineTitulo', 'Título', 'También se ve en el inicio.'], ['onlineTexto', 'Texto']]],
-      ...[['femenino', 'Vestuario femenino'], ['infantil', 'Vestuario infantil'], ['masculino', 'Vestuario masculino'],
+      ...[['vestuario', 'Vestuario'],
         ['accesorios', 'Accesorios'], ['hogar', 'Decoración de hogar'], ['fiestas', 'Especial fiestas']].map(([id, nombre]) =>
         ['Categoría: ' + nombre, [[`online_${id}Foto`, 'Foto de la categoría'],
           [`online_${id}Texto`, 'Texto', 'Los cursos de cada categoría se agregan en <a href="#cursos">Mis cursos online</a>.']]]),
@@ -1187,7 +1187,7 @@ const PAGINAS = [
     descripcion: 'El texto de la página de patrones y las fotos de cada categoría.',
     grupos: [
       ['Textos', [['patrones_etiqueta', 'Etiqueta chica'], ['patrones_titulo', 'Título'], ['patrones_texto', 'Texto'], ['patrones_ctaTitulo', 'Frase final']]],
-      ...[['femenino', 'Vestuario femenino'], ['infantil', 'Vestuario infantil'], ['masculino', 'Vestuario masculino'],
+      ...[['vestuario', 'Vestuario'],
         ['accesorios', 'Accesorios'], ['hogar', 'Decoración de hogar'], ['fiestas', 'Especial fiestas']].map(([id, nombre]) =>
         ['Categoría: ' + nombre, [[`patrones_${id}Titulo`, 'Título', 'El nombre en el menú de Patrones no cambia.'], [`patrones_${id}Texto`, 'Texto'], ['galeria:patrones-' + id, '']]]),
       ['Más fotos (opcional)', [['patrones_galeriaTitulo', 'Título de la sección', 'Si no subes fotos, esta sección no se muestra.'], ['galeria:patrones', '']]]

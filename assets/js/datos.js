@@ -126,12 +126,13 @@ const NM = (() => {
 
   // Categorías del submenú de Patrones; los cursos online se ordenan con las mismas
   const CATEGORIAS = [
-    { id: 'vestuario-femenino', nombre: 'Vestuario femenino' }, { id: 'vestuario-infantil', nombre: 'Vestuario infantil' },
-    { id: 'vestuario-masculino', nombre: 'Vestuario masculino' }, { id: 'accesorios', nombre: 'Accesorios' },
+    { id: 'vestuario', nombre: 'Vestuario' }, { id: 'accesorios', nombre: 'Accesorios' },
     { id: 'decoracion-hogar', nombre: 'Decoración de hogar' }, { id: 'especial-fiestas', nombre: 'Especial fiestas' }
   ];
   const OTROS = { id: 'otros', nombre: 'Otros cursos' };
-  const categoria = (c) => CATEGORIAS.find(k => k.id === c.categoria) || OTROS;
+  // Antes había vestuario femenino, infantil y masculino: los cursos guardados con esas quedan en Vestuario
+  const idCategoria = (id) => /^vestuario-/.test(id || '') ? 'vestuario' : id;
+  const categoria = (c) => CATEGORIAS.find(k => k.id === idCategoria(c.categoria)) || OTROS;
 
   // Galerías del portafolio originales (lo editado en el panel vive en sitio/galerias, ver galerias.js)
   const serie = (nombre, ...n) => n.map(x => `${nombre}-${String(x).padStart(2, '0')}.jpg`);
@@ -146,7 +147,7 @@ const NM = (() => {
     // Secciones "Más fotos" de cada página: parten vacías y no se muestran hasta que Daniela suba fotos
     'inicio': [], 'quien-soy': [], 'cursos': [], 'contacto': [], 'patrones': [],
     // Una galería por categoría de patrones (también parten vacías)
-    'patrones-femenino': [], 'patrones-infantil': [], 'patrones-masculino': [],
+    'patrones-vestuario': [],
     'patrones-accesorios': [], 'patrones-hogar': [], 'patrones-fiestas': []
   };
 
