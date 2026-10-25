@@ -1,7 +1,7 @@
 /* Panel privado de Daniela.
    Pensado para usarse sin conocimientos técnicos: una cosa a la vez, palabras simples,
    botones grandes y confirmación antes de borrar.
-   Secciones: #inicio, #cursos, #curso/<id>, #presenciales, #presencial/<id>, #talleres, #paginas, #pagina/<id>, #ventas */
+   Secciones: #inicio, #cursos, #curso/<id>, #patrones, #patron/<id>, #presenciales, #presencial/<id>, #talleres, #paginas, #pagina/<id>, #ventas */
 import * as nube from './nube.js';
 
 const { esc, clp } = NM;
@@ -117,6 +117,7 @@ const soloDigitos = (s) => Number(String(s).replace(/\D/g, '')) || 0;
 const SECCIONES = [
   ['inicio', 'Inicio', ICO.inicio],
   ['cursos', 'Cursos online', ICO.cursos],
+  ['patrones', 'Patrones', ICO.pdf],
   ['presenciales', 'Clases presenciales', ICO.presencial],
   ['talleres', 'Talleres realizados', ICO.talleres],
   ['paginas', 'Mis páginas', ICO.paginas],
@@ -200,7 +201,9 @@ function entrada(error = '') {
 // ---------- Inicio ----------
 async function inicio() {
   cargando('inicio');
-  const [cursos, ventas] = await Promise.all([nube.todosLosCursos(), nube.ventas()]);
+  const [todos, ventas] = await Promise.all([nube.todosLosCursos(), nube.ventas()]);
+  const cursos = todos.filter(c => !NM.esPatron(c));
+  const patronesLista = todos.filter(NM.esPatron);
   const mes = new Date(); mes.setDate(1); mes.setHours(0, 0, 0, 0);
   const delMes = ventas.filter(v => fechaDe(v) >= mes);
   const visibles = cursos.filter(c => c.publicado);
@@ -212,24 +215,29 @@ async function inicio() {
     if (c.publicado && faltan) pendientes.push({ c, texto: `<b>${esc(c.titulo)}</b> ya está en tu página, pero ${faltan === 1 ? 'a 1 clase le falta' : `a ${faltan} clases les falta`} el video.` });
     else if (!c.publicado && !faltan && c.lecciones.length) pendientes.push({ c, texto: `<b>${esc(c.titulo)}</b> tiene todos sus videos, pero todavía no se muestra en tu página.` });
   });
+  patronesLista.forEach(p => {
+    if (!p.publicado && p.materiales.length) pendientes.push({ c: p, enlace: 'patron', texto: `<b>${esc(p.titulo)}</b> ya tiene su PDF, pero todavía no se muestra en tu página.` });
+  });
 
   marco('inicio', `
     <div class="resumen-panel">
       <div><span>Ventas este mes</span><b>${delMes.length}</b><small>${clp(delMes.reduce((s, v) => s + (v.monto || 0), 0))}</small></div>
       <div><span>Cursos en tu página</span><b>${visibles.length}</b><small>de ${cursos.length} en total</small></div>
+      <div><span>Patrones en tu página</span><b>${patronesLista.filter(p => p.publicado).length}</b><small>de ${patronesLista.length} en total</small></div>
     </div>
 
     ${pendientes.length ? `<h2 class="panel-titulo">Por hacer</h2>
-    <ul class="pendientes">${pendientes.map(p => `<li>${ICO.alerta}<span>${p.texto}</span><a class="btn btn-chico" href="#curso/${encodeURIComponent(p.c.id)}">Completar</a></li>`).join('')}</ul>` : ''}
+    <ul class="pendientes">${pendientes.map(p => `<li>${ICO.alerta}<span>${p.texto}</span><a class="btn btn-chico" href="#${p.enlace || 'curso'}/${encodeURIComponent(p.c.id)}">Completar</a></li>`).join('')}</ul>` : ''}
 
     <h2 class="panel-titulo">¿Qué quieres hacer?</h2>
     <div class="acciones">
       <button class="accion" type="button" id="accion-nuevo">${ICO.mas}<b>Crear un curso nuevo</b><span>Ponle nombre, precio y sube sus videos.</span></button>
       <a class="accion" href="#cursos">${ICO.cursos}<b>Ver o cambiar mis cursos</b><span>Subir videos, cambiar precios o fotos.</span></a>
+      <a class="accion" href="#patrones">${ICO.pdf}<b>Mis patrones en PDF</b><span>Crear un patrón, subir sus fotos y su PDF.</span></a>
       <a class="accion" href="#presenciales">${ICO.presencial}<b>Cambiar mis clases presenciales</b><span>Precios, horarios, textos y fotos.</span></a>
       <a class="accion" href="#talleres">${ICO.talleres}<b>Cambiar mis talleres realizados</b><span>Agregar un taller, sus textos y sus fotos.</span></a>
       <a class="accion" href="#paginas">${ICO.paginas}<b>Cambiar mis páginas</b><span>Textos y fotos de cada página, tu portafolio y tus datos de contacto.</span></a>
-      <a class="accion" href="#ventas">${ICO.ventas}<b>Ver mis ventas</b><span>Quién compró, qué curso y cuándo.</span></a>
+      <a class="accion" href="#ventas">${ICO.ventas}<b>Ver mis ventas</b><span>Quién compró, qué curso o patrón y cuándo.</span></a>
     </div>`);
   document.getElementById('accion-nuevo').onclick = () => crearCurso();
 }
@@ -240,7 +248,7 @@ const fechaDe = (v) => v.fecha && v.fecha.toDate ? v.fecha.toDate() : new Date(v
 // Agrupados por categoría (las mismas de Patrones), cada una con su botón para crear un curso dentro.
 async function cursos() {
   cargando('cursos');
-  const lista = await nube.todosLosCursos();
+  const lista = (await nube.todosLosCursos()).filter(c => !NM.esPatron(c));
   const fila = (c) => {
     const con = c.lecciones.filter(l => l.video).length;
     return `<a class="curso-fila" href="#curso/${encodeURIComponent(c.id)}">
@@ -274,7 +282,7 @@ async function cursos() {
 
 /** Crea un curso oculto (en la categoría indicada, si viene) y abre su editor. */
 async function crearCurso(categoria = '') {
-  const cursos = await nube.todosLosCursos();
+  const cursos = (await nube.todosLosCursos()).filter(c => !NM.esPatron(c));
   const id = 'curso-' + Date.now().toString(36);
   await nube.guardarCurso({ id, titulo: 'Mi curso nuevo', resumen: '', requisitos: '', nivel: 'basico', categoria,
     precio: 30000, imagen: 'cursos-05.jpg', publicado: false, orden: cursos.length, lecciones: [{ titulo: 'Clase 1', duracion: '' }], materiales: [] });
@@ -286,6 +294,7 @@ async function crearCurso(categoria = '') {
 async function editarCurso(id) {
   cargando('cursos');
   const c = await nube.curso(id);
+  if (c && NM.esPatron(c)) { location.replace('#patron/' + encodeURIComponent(id)); return; }
   if (!c) {
     marco('cursos', '<div class="vacio"><p>Este curso ya no existe.</p><a class="btn" href="#cursos">Volver a mis cursos</a></div>');
     return;
@@ -609,6 +618,244 @@ function pintarEditor(c) {
       marcarSucio(false);
       avisar('Curso eliminado');
       location.hash = 'cursos';
+    } catch (x) { avisar('No se pudo eliminar. Intenta de nuevo.', 'error'); }
+  };
+}
+
+// ---------- Patrones en PDF ----------
+// Se guardan junto a los cursos (tipo "patron"): se compran con cuenta y el PDF queda en Mis cursos.
+async function patrones() {
+  cargando('patrones');
+  const lista = (await nube.todosLosCursos()).filter(NM.esPatron);
+  const fila = (p) => `<a class="curso-fila" href="#patron/${encodeURIComponent(p.id)}">
+      <img src="${esc(NM.fotosPatron(p)[0])}" alt="">
+      <div>
+        <b>${esc(p.titulo)}</b>
+        <span class="curso-datos">${clp(p.precio)} · ${p.fotos?.length || 0} foto${p.fotos?.length === 1 ? '' : 's'} · ${p.materiales.length ? `${p.materiales.length} PDF` : 'Falta el PDF'}</span>
+        ${p.publicado ? `<span class="estado estado-ok">${ICO.ok} En tu página</span>` : '<span class="estado">Oculto (todavía no se muestra)</span>'}
+      </div>
+      <span class="btn btn-borde btn-chico">Abrir</span>
+    </a>`;
+  const grupos = [...NM.CATEGORIAS, { id: 'otros', nombre: 'Sin categoría (no se ven en tu página)' }]
+    .map(k => ({ ...k, lista: lista.filter(p => NM.categoria(p).id === k.id) }))
+    .filter(g => g.id !== 'otros' || g.lista.length);
+  marco('patrones', `
+    <div class="panel-barra">
+      <h2 class="panel-titulo">Mis patrones en PDF</h2>
+      <button class="btn" type="button" data-crear="">${ICO.mas} Crear patrón nuevo</button>
+    </div>
+    <p class="ayuda">${ICO.ayuda}<span>Cada patrón tiene su foto, precio, una descripción breve y su PDF. Quien lo compra entra con su cuenta y lo descarga desde <b>Mis cursos</b>; también le llega un correo con el enlace. Solo los patrones marcados como <b>"En tu página"</b> se pueden comprar.</span></p>
+    ${grupos.map(g => `<section class="grupo-cursos">
+      <div class="panel-barra">
+        <h3>${esc(g.nombre)} <small>${g.lista.length === 1 ? '1 patrón' : g.lista.length + ' patrones'}</small></h3>
+        ${g.id !== 'otros' ? `<button class="btn btn-borde btn-chico" type="button" data-crear="${g.id}">${ICO.mas} Crear patrón aquí</button>` : ''}
+      </div>
+      ${g.lista.length ? `<div class="lista-cursos">${g.lista.map(fila).join('')}</div>` : '<p class="grupo-vacio">Todavía no hay patrones en esta categoría.</p>'}
+    </section>`).join('')}`);
+  document.querySelectorAll('[data-crear]').forEach(b => b.onclick = () => crearPatron(b.dataset.crear));
+}
+
+/** Crea un patrón oculto (en la categoría indicada, o en Accesorios) y abre su editor. */
+async function crearPatron(categoria = '') {
+  const lista = (await nube.todosLosCursos()).filter(NM.esPatron);
+  const id = 'patron-' + Date.now().toString(36);
+  await nube.guardarCurso({ id, tipo: 'patron', titulo: 'Mi patrón nuevo', resumen: '', detalles: '', categoria: categoria || 'accesorios',
+    precio: 5000, imagen: '', fotos: [], publicado: false, orden: lista.length, lecciones: [], materiales: [] });
+  avisar('Patrón creado. Ahora complétalo.');
+  location.hash = 'patron/' + id;
+}
+
+async function editarPatron(id) {
+  cargando('patrones');
+  const p = await nube.curso(id);
+  if (!p || !NM.esPatron(p)) {
+    marco('patrones', '<div class="vacio"><p>Este patrón ya no existe.</p><a class="btn" href="#patrones">Volver a mis patrones</a></div>');
+    return;
+  }
+  p.fotos = p.fotos || [];
+  p.detalles = p.detalles || '';
+  pintarPatron(p);
+}
+
+function pintarPatron(p) {
+  const zona = marco('patrones', `
+    <a class="volver" href="#patrones">${ICO.volver} Volver a mis patrones</a>
+    <div class="panel-barra">
+      <h2 class="panel-titulo" id="titulo-editor">${esc(p.titulo)}</h2>
+      <a class="btn btn-borde btn-chico" href="patron?id=${encodeURIComponent(p.id)}" target="_blank" rel="noopener">${ICO.ojo} Ver cómo se ve</a>
+    </div>
+
+    <form id="f-patron" class="editor" novalidate>
+      <section class="paso">
+        <h3><span class="num">1</span> Datos del patrón</h3>
+        <label>Nombre del patrón
+          <input name="titulo" value="${esc(p.titulo)}" maxlength="120" required></label>
+        <label>Categoría
+          <select name="categoria">
+            ${NM.CATEGORIAS.map(k => `<option value="${k.id}" ${NM.categoria(p).id === k.id ? 'selected' : ''}>${k.nombre}</option>`).join('')}
+          </select>
+          <small>En la página de Patrones aparece dentro de esta categoría.</small></label>
+        <label>Precio
+          <span class="campo-precio"><span>$</span><input name="precio" inputmode="numeric" value="${precioTexto(p.precio)}" required></span>
+          <small>En pesos chilenos. Mercado Pago descuenta su comisión de cada venta.</small></label>
+        <label>Descripción breve
+          <textarea name="resumen" rows="3" maxlength="400" placeholder="Ej: Bolso amplio con forro, bolsillo interior y asas largas.">${esc(p.resumen)}</textarea>
+          <small>1 o 2 líneas: qué es. Se ve debajo de la foto en la lista de patrones.</small></label>
+        <label>Detalles
+          <textarea name="detalles" rows="4" maxlength="1500" placeholder="Ej:&#10;Nivel básico&#10;Tallas S a XL&#10;Incluye instrucciones paso a paso">${esc(p.detalles)}</textarea>
+          <small>Opcional. Una cosa por línea: nivel, tallas, medidas, qué tela usar… Se ven en la página del patrón. ${NEGRITA}</small></label>
+      </section>
+
+      <section class="paso">
+        <h3><span class="num">2</span> Fotos del patrón</h3>
+        <p class="ayuda-chica">Sube varias: el producto terminado desde distintos lados y una foto de las piezas que hay que cortar. <b>La primera es la portada</b>, la que se ve en la lista.</p>
+        <div id="fotos-patron"></div>
+      </section>
+
+      <section class="paso">
+        <h3><span class="num">3</span> El PDF del patrón</h3>
+        <p class="ayuda-chica">Es lo que recibe quien compra: lo descarga desde Mis cursos cuando quiera. Si tienes el patrón en varios archivos (por ejemplo, uno por talla), súbelos todos.</p>
+        ${p.materiales.length ? `<ul class="materiales">${p.materiales.map((m, k) => `<li>${ICO.pdf}<span>${esc(m.nombre)}</span>
+          <button type="button" class="icono peligro" data-quitar-material="${k}" aria-label="Quitar ${esc(m.nombre)}">${ICO.basura}</button></li>`).join('')}</ul>`
+          : '<p class="estado estado-falta">Falta el PDF: sin él no se puede mostrar en tu página.</p>'}
+        <label class="btn ${p.materiales.length ? 'btn-borde' : ''} subir-archivo">${ICO.subir} ${p.materiales.length ? 'Subir otro PDF' : 'Subir el PDF'}<input type="file" accept=".pdf,application/pdf" id="subir-material" hidden></label>
+        <div class="subida" id="subida-material" hidden><div class="progreso"><span></span></div><p></p></div>
+      </section>
+
+      <section class="paso">
+        <h3><span class="num">4</span> ¿Mostrarlo en tu página?</h3>
+        <label class="interruptor">
+          <input type="checkbox" name="publicado" ${p.publicado ? 'checked' : ''}>
+          <span class="pista" aria-hidden="true"></span>
+          <span><b>Mostrar este patrón en mi página</b><br><small>Si está apagado, el patrón queda oculto: nadie lo ve ni lo puede comprar.</small></span>
+        </label>
+      </section>
+
+      <section class="paso paso-peligro">
+        <h3>Eliminar el patrón</h3>
+        <p class="ayuda-chica">Si ya no quieres venderlo, es mejor ocultarlo (paso 4). Eliminar lo borra para siempre.</p>
+        <button class="btn btn-borde btn-peligro-borde" type="button" id="borrar-patron">${ICO.basura} Eliminar este patrón</button>
+      </section>
+
+      <div class="barra-guardar">
+        <span id="estado-guardado">${ICO.ok} Todo guardado</span>
+        <button class="btn btn-grande" type="submit">Guardar cambios</button>
+      </div>
+    </form>`);
+
+  const f = zona.querySelector('#f-patron');
+  marcarSucio(false);
+
+  const leer = () => {
+    p.titulo = f.titulo.value.trim() || 'Patrón sin nombre';
+    p.precio = soloDigitos(f.precio.value);
+    p.resumen = f.resumen.value.trim();
+    p.detalles = f.detalles.value.trim();
+    p.categoria = f.categoria.value;
+    p.publicado = f.publicado.checked;
+    return p;
+  };
+  const guardar = async (texto = 'Cambios guardados') => {
+    if (p.precio < 1000) {
+      await confirmar({ titulo: 'Revisa el precio', texto: 'El precio tiene que ser de al menos $1.000.', si: 'Entendido', soloAceptar: true });
+      f.precio.focus();
+      return false;
+    }
+    if (p.publicado && !p.materiales.length) {
+      await confirmar({ titulo: 'Falta el PDF', texto: 'Para mostrar el patrón en tu página, primero sube su PDF (paso 3). Así quien lo compre lo puede descargar.', si: 'Entendido', soloAceptar: true });
+      p.publicado = f.publicado.checked = false;
+      return false;
+    }
+    p.imagen = p.fotos[0] || '';
+    try {
+      await nube.guardarCurso(p);
+      marcarSucio(false);
+      if (texto) avisar(texto);
+      return true;
+    } catch (e) {
+      avisar('No se pudo guardar. Revisa tu internet y vuelve a intentarlo.', 'error');
+      return false;
+    }
+  };
+
+  f.addEventListener('input', (e) => {
+    if (e.target.type === 'file') return;
+    marcarSucio(true);
+    if (e.target.name === 'titulo') document.getElementById('titulo-editor').textContent = e.target.value || 'Patrón sin nombre';
+  });
+  f.precio.addEventListener('blur', () => { f.precio.value = precioTexto(soloDigitos(f.precio.value)); });
+  f.addEventListener('submit', (e) => { e.preventDefault(); leer(); guardar(); });
+
+  // Fotos: se guardan apenas suben, junto con lo escrito en el formulario
+  const pintarFotos = () => editorFotos(document.getElementById('fotos-patron'), {
+    lista: p.fotos,
+    originales: [],
+    cambiada: p.fotos.length > 0,
+    guardar: async (nueva) => {
+      leer();
+      p.fotos = nueva || [];
+      if (!await guardar('')) throw new Error('No se guardó');
+      pintarFotos();
+    }
+  });
+  pintarFotos();
+
+  // PDF
+  document.getElementById('subir-material').onchange = async (e) => {
+    const archivo = e.target.files[0];
+    e.target.value = '';
+    if (!archivo) return;
+    if (!/\.pdf$/i.test(archivo.name)) {
+      await confirmar({ titulo: 'Ese archivo no es un PDF', texto: 'Sube el patrón en <b>PDF</b>, así se puede imprimir en cualquier computador.', si: 'Entendido', soloAceptar: true });
+      return;
+    }
+    const caja = document.getElementById('subida-material');
+    const barra = caja.querySelector('.progreso span');
+    caja.hidden = false;
+    subiendo++;
+    try {
+      const ruta = await nube.subirArchivo(`cursos/${p.id}/materiales/${nombreArchivo(archivo)}`, archivo, (x) => {
+        barra.style.width = x + '%';
+        caja.querySelector('p').textContent = `Subiendo… ${x}%`;
+      });
+      subiendo--;
+      leer();
+      p.materiales = [...p.materiales, { nombre: archivo.name.replace(/\.[^.]+$/, ''), ruta }];
+      if (await guardar('PDF subido y guardado')) pintarPatron(p);
+    } catch (x) {
+      subiendo = Math.max(0, subiendo - 1);
+      caja.hidden = true;
+      avisar('No se pudo subir el PDF. Intenta de nuevo.', 'error');
+    }
+  };
+  f.querySelectorAll('[data-quitar-material]').forEach(b => b.onclick = async () => {
+    const k = Number(b.dataset.quitarMaterial);
+    const m = p.materiales[k];
+    leer();
+    if (p.publicado && p.materiales.length === 1) {
+      await confirmar({ titulo: 'El patrón necesita su PDF', texto: 'Está en tu página, así que no puede quedar sin PDF. Sube primero el nuevo y después quita este, o apaga "Mostrar este patrón en mi página".', si: 'Entendido', soloAceptar: true });
+      return;
+    }
+    if (!await confirmar({ titulo: '¿Quitar este PDF?', texto: `Vas a quitar <b>"${esc(m.nombre)}"</b>. Quienes ya compraron el patrón no podrán descargarlo.`, si: 'Sí, quitarlo', no: 'No', peligro: true })) return;
+    p.materiales.splice(k, 1);
+    if (await guardar('PDF quitado')) { nube.borrarArchivo(m.ruta); pintarPatron(p); }
+  });
+
+  // Eliminar
+  document.getElementById('borrar-patron').onclick = async () => {
+    if (await nube.tieneVentas(p.id)) {
+      await confirmar({ titulo: 'Este patrón ya se vendió', texto: 'Como ya lo compraron, no se puede eliminar: perderían su PDF. Si no quieres venderlo más, apaga "Mostrar este patrón en mi página" (paso 4).', si: 'Entendido', soloAceptar: true });
+      return;
+    }
+    const ok = await confirmar({ titulo: '¿Eliminar este patrón?', texto: `Se borrará <b>"${esc(p.titulo)}"</b> para siempre, con sus fotos y su PDF. Esto no se puede deshacer.`, si: 'Sí, eliminar para siempre', no: 'No, conservarlo', peligro: true });
+    if (!ok) return;
+    try {
+      await nube.borrarCurso(p.id);
+      marcarSucio(false);
+      p.materiales.forEach(m => nube.borrarArchivo(m.ruta));
+      p.fotos.forEach(borrarFotoSubida);
+      avisar('Patrón eliminado');
+      location.hash = 'patrones';
     } catch (x) { avisar('No se pudo eliminar. Intenta de nuevo.', 'error'); }
   };
 }
@@ -1184,12 +1431,13 @@ const PAGINAS = [
       ['Más fotos (opcional)', [['contacto_galeriaTitulo', 'Título de la sección', 'Si no subes fotos, esta sección no se muestra.'], ['galeria:contacto', '']]]
     ] },
   { id: 'patrones', nombre: 'Patrones', archivo: 'patrones', icono: ICO.pdf,
-    descripcion: 'El texto de la página de patrones y las fotos de cada categoría.',
+    descripcion: 'Los textos de la página de patrones y de cada categoría. Los patrones se crean en Patrones.',
     grupos: [
-      ['Textos', [['patrones_etiqueta', 'Etiqueta chica'], ['patrones_titulo', 'Título'], ['patrones_texto', 'Texto'], ['patrones_ctaTitulo', 'Frase final']]],
+      ['Textos', [['patrones_etiqueta', 'Etiqueta chica'], ['patrones_titulo', 'Título'], ['patrones_texto', 'Texto', 'Cada patrón con su foto, precio y PDF se crea en <a href="#patrones">Patrones</a>.'], ['patrones_ctaTitulo', 'Frase final']]],
       ...[['vestuario', 'Vestuario'],
         ['accesorios', 'Accesorios'], ['hogar', 'Decoración de hogar'], ['fiestas', 'Especial fiestas']].map(([id, nombre]) =>
-        ['Categoría: ' + nombre, [[`patrones_${id}Titulo`, 'Título', 'El nombre en el menú de Patrones no cambia.'], [`patrones_${id}Texto`, 'Texto'], ['galeria:patrones-' + id, '']]]),
+        ['Categoría: ' + nombre, [[`patrones_${id}Titulo`, 'Título', 'El nombre en el menú de Patrones no cambia.'], [`patrones_${id}Texto`, 'Texto'], [`patrones_${id}FotosTitulo`, 'Título de las fotos', 'Fotos opcionales que se ven debajo de los patrones de esta categoría. Si no subes fotos, no se muestran.'], ['galeria:patrones-' + id, '']]]),
+      ['¿Cómo funciona?', [['patrones_pasosTitulo', 'Título'], ['patrones_paso1Titulo', 'Paso 1: título'], ['patrones_paso1Texto', 'Paso 1: texto'], ['patrones_paso2Titulo', 'Paso 2: título'], ['patrones_paso2Texto', 'Paso 2: texto'], ['patrones_paso3Titulo', 'Paso 3: título'], ['patrones_paso3Texto', 'Paso 3: texto']]],
       ['Más fotos (opcional)', [['patrones_galeriaTitulo', 'Título de la sección', 'Si no subes fotos, esta sección no se muestra.'], ['galeria:patrones', '']]]
     ] },
   { id: 'talleres', nombre: 'Talleres realizados (textos)', archivo: 'talleres', icono: ICO.talleres,
@@ -1254,6 +1502,7 @@ async function paginas() {
       <a class="accion" href="#presenciales">${ICO.presencial}<b>Clases presenciales</b><span>Cada clase con su página, precio, horarios y fotos.</span></a>
       <a class="accion" href="#talleres">${ICO.talleres}<b>Talleres realizados</b><span>Cada taller con sus años, su texto y sus fotos.</span></a>
       <a class="accion" href="#cursos">${ICO.cursos}<b>Cursos online</b><span>Tus cursos en video, sus precios y sus fotos.</span></a>
+      <a class="accion" href="#patrones">${ICO.pdf}<b>Patrones en PDF</b><span>Cada patrón con sus fotos, precio y PDF.</span></a>
     </div>`);
 }
 
@@ -1572,13 +1821,13 @@ async function ventas() {
     <p class="ayuda">${ICO.ayuda}<span>El dinero llega a tu cuenta de Mercado Pago. Ahí mismo ves cuánto descontó de comisión. En las <b>clases presenciales</b> tienes el WhatsApp de cada persona para coordinar el horario.</span></p>
     ${v.length ? `<ul class="ventas">${v.map(x => `<li>
         <div><b>${esc(x.nombre || 'Estudiante')}</b><span>${esc(x.correo)}</span>${x.telefono ? `<span>${esc(x.telefono)}</span>` : ''}</div>
-        <div><span class="estado ${x.tipo === 'presencial' ? 'estado-falta' : ''}">${x.tipo === 'presencial' ? 'Clase presencial' : 'Curso online'}</span><span>${esc(x.titulo)}</span><span>${fecha(x)}</span></div>
+        <div><span class="estado ${x.tipo === 'presencial' ? 'estado-falta' : ''}">${x.tipo === 'presencial' ? 'Clase presencial' : x.tipo === 'patron' ? 'Patrón PDF' : 'Curso online'}</span><span>${esc(x.titulo)}</span><span>${fecha(x)}</span></div>
         <b class="monto">${clp(x.monto)}</b>
         ${x.tipo === 'presencial' ? `<div class="venta-coordinar">
           ${x.nota ? `<p><b>Su comentario:</b> ${esc(x.nota)}</p>` : ''}
           ${x.telefono ? `<a class="btn btn-chico" href="https://wa.me/${esc(whatsappDe(x.telefono))}?text=${encodeURIComponent(`Hola ${(x.nombre || '').split(' ')[0]}, soy Daniela. Recibí tu pago de "${x.titulo}". ¿Coordinamos el horario?`)}" target="_blank" rel="noopener">Escribirle por WhatsApp</a>` : ''}
         </div>` : ''}
-      </li>`).join('')}</ul>` : '<div class="vacio"><p>Todavía no tienes ventas. Cuando alguien compre un curso, aparecerá aquí.</p></div>'}`);
+      </li>`).join('')}</ul>` : '<div class="vacio"><p>Todavía no tienes ventas. Cuando alguien compre un curso o un patrón, aparecerá aquí.</p></div>'}`);
 }
 
 // ---------- Navegación ----------
@@ -1593,6 +1842,8 @@ async function mostrar() {
   try {
     if (seccion === 'curso' && id) await editarCurso(decodeURIComponent(id));
     else if (seccion === 'cursos') await cursos();
+    else if (seccion === 'patron' && id) await editarPatron(decodeURIComponent(id));
+    else if (seccion === 'patrones') await patrones();
     else if (seccion === 'presencial' && id) await editarPresencial(decodeURIComponent(id));
     else if (seccion === 'presenciales') await presenciales();
     else if (seccion === 'talleres') await talleres();

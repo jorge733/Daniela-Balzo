@@ -10,15 +10,16 @@ Prototipo del nuevo sitio web de **Daniela Balzo** (Negra Mora Diseños): clases
 | Clases presenciales agregadas desde el panel | `clase.html?id=…` |
 | Pago de clases presenciales | Botón "Pagar e inscribirme" en cada clase con precio; vuelta de Mercado Pago en `inscripcion.html` |
 | Venta de cursos online | `cursos-online.html` (catálogo), `curso.html?id=…` (ficha, cuenta y pago con Mercado Pago) |
-| Aula de alumnas | `aula.html` (inicio de sesión, mis cursos, videos, materiales y avance) |
-| Panel de Daniela | `panel.html` (cursos online con videos y materiales, clases presenciales, talleres realizados, textos y fotos de cada página, galerías del portafolio, datos de contacto, ventas) |
+| Venta de patrones en PDF | `patrones.html` (patrones por categoría), `patron.html?id=…` (fotos, precio, detalles, cuenta y pago). El PDF queda en Mis cursos |
+| Aula de alumnas | `aula.html` (inicio de sesión, mis cursos, videos, materiales, avance y descarga de patrones) |
+| Panel de Daniela | `panel.html` (cursos online con videos y materiales, patrones con fotos y PDF, clases presenciales, talleres realizados, textos y fotos de cada página, galerías del portafolio, datos de contacto, ventas) |
 | Legal y errores | `terminos.html`, `privacidad.html` (borradores), `404.html` |
 
 ## Cómo funciona
 
 - **Sitio estático** (HTML, CSS y JS sin compilar) publicado en Vercel.
 - **Firebase Authentication**: cuentas de alumnas y de Daniela (correo y contraseña, recuperación por correo).
-- **Firestore**: cursos, textos y fotos editables de cada página (`sitio/textos`: en el HTML van marcados con `data-texto` y el panel lee de ahí el valor original), galerías del portafolio (`sitio/galerias`), clases presenciales y talleres (`sitio/presenciales`, `sitio/talleres`), accesos, avance y ventas. Las reglas están en `firestore.rules`.
+- **Firestore**: cursos y patrones (los patrones van en `cursos` con `tipo: "patron"`, varias `fotos` y su PDF en `materiales`; así comparten compra, acceso, aula y enlaces de descarga), textos y fotos editables de cada página (`sitio/textos`: en el HTML van marcados con `data-texto` y el panel lee de ahí el valor original), galerías del portafolio (`sitio/galerias`), clases presenciales y talleres (`sitio/presenciales`, `sitio/talleres`), accesos, avance y ventas. Las reglas están en `firestore.rules`.
 - **Firebase Storage**: videos y materiales. Solo Daniela sube; las alumnas los ven con un enlace temporal (4 horas) que entrega `/api/archivo` después de revisar que compraron el curso. Reglas en `storage.rules`.
 - **Pagos**: los cursos online se compran con cuenta (dan acceso al aula). Las clases presenciales se pagan sin cuenta: quien se inscribe deja nombre, correo y WhatsApp, queda en `inscripciones/` y la venta aparece en el panel con un botón para coordinar el horario. El precio lo pone siempre el servidor (lo guardado en el panel o los valores de `assets/js/datos.js`).
 - **Vercel Functions** (`/api`): crean el pago en Mercado Pago, reciben la notificación (webhook), confirman el pago al volver y firman los enlaces de los videos. Las compras solo las escribe el servidor.
@@ -64,7 +65,7 @@ assets/
   js/contenido.js       Clases presenciales y talleres (valores originales y lectura de lo editado)
   js/layout.js         Encabezado, menú, pie, botón de WhatsApp y textos editables
   js/galerias.js       Galerías con visor de fotos
-  js/tienda.js         Ficha de curso y compra
+  js/tienda.js         Ficha de curso o patrón y compra
   js/aula.js           Aula virtual
   js/panel.js          Panel de administración
 scripts/               Servidor local, datos de prueba y alta de administradoras

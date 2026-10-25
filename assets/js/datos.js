@@ -275,6 +275,9 @@ const NM = (() => {
     textos: () => ({ ...TEXTOS, ...guardados }),
     /** Foto de un curso: una de las fotos del sitio o una subida desde el panel. */
     imagen: (c) => /^https?:/.test(c.imagen || '') ? c.imagen : 'assets/img/' + (c.imagen || 'cursos-05.jpg'),
+    /** Los patrones en PDF se guardan junto a los cursos, con tipo "patron" y varias fotos. */
+    esPatron: (c) => c.tipo === 'patron',
+    fotosPatron: (c) => (c.fotos && c.fotos.length ? c.fotos : [c.imagen || 'accesorios-08.jpg']).map(foto),
     clp: (n) => '$' + Number(n || 0).toLocaleString('es-CL'),
     esc
   };

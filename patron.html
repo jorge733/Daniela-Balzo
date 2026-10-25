@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patrón en PDF | Daniela Balzo · Negra Mora</title>
+<meta name="description" content="Patrón de costura en PDF de Daniela Balzo, listo para descargar e imprimir.">
+<!-- vista-previa -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Daniela Balzo · Negra Mora">
+<meta property="og:locale" content="es_CL">
+<meta property="og:title" content="Patrón en PDF | Daniela Balzo · Negra Mora">
+<meta property="og:description" content="Patrón de costura en PDF de Daniela Balzo, listo para descargar e imprimir.">
+<meta property="og:url" content="https://www.negramora.cl/patron">
+<meta property="og:image" content="https://www.negramora.cl/assets/img/compartir.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Daniela Balzo, Negra Mora: clases de costura">
+<meta name="twitter:card" content="summary_large_image">
+<!-- /vista-previa -->
+<link rel="icon" href="assets/img/logo-icono.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wdth,wght@75..100,300..800&display=swap">
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body data-pagina="patrones">
+<main id="contenido">
+  <section class="banda"><div class="wrap"><p class="vacio">Cargando patrón…</p></div></section>
+</main>
+
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+  <div class="caja">
+    <h2 id="modal-titulo">Comprar patrón</h2>
+    <div class="resumen"><span id="m-curso"></span><span id="m-precio"></span></div>
+
+    <form class="form" id="paso-cuenta">
+      <p class="nota" id="m-ya-cuenta"></p>
+      <div id="campos-cuenta">
+        <label id="m-campo-nombre">Nombre<input id="m-nombre" autocomplete="name" required></label>
+        <label>Correo<input id="m-correo" type="email" autocomplete="email" required></label>
+        <label id="m-etiqueta-clave">Crea una contraseña<input id="m-clave" type="password" minlength="6" autocomplete="new-password" required></label>
+        <p class="nota" id="m-nota-cuenta">Con este correo y contraseña entrarás a Mis cursos para ver el curso.</p>
+        <p class="nota"><button class="enlace" type="button" id="m-modo">¿Ya tienes cuenta? Entra aquí</button>
+          <button class="enlace" type="button" id="m-olvide" hidden>Olvidé mi contraseña</button></p>
+      </div>
+      <p class="error" id="m-error" role="alert"></p>
+      <button class="btn mp" type="submit">Pagar con Mercado Pago</button>
+      <button class="btn btn-borde" type="button" data-cerrar>Cancelar</button>
+    </form>
+
+    <div id="paso-pagando" hidden>
+      <p>Te estamos llevando a Mercado Pago para pagar de forma segura…</p>
+      <div class="barra cargando"><span></span></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/datos.js"></script>
+<script src="assets/js/contenido.js"></script>
+<script src="assets/js/layout.js"></script>
+<script type="module" src="assets/js/tienda.js"></script>
+</body>
+</html>

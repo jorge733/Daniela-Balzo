@@ -29,6 +29,9 @@ export function leerReferencia(ref) {
   return a === 'insc' ? { inscripcion: b, precio: Number(precio) } : { uid: a, curso: b, precio: Number(precio) };
 }
 
+/** Página pública de un curso online o de un patrón en PDF (los dos viven en la colección cursos). */
+export const ficha = (curso) => curso.tipo === 'patron' ? 'patron' : 'curso';
+
 /** Crea la preferencia de pago y devuelve la URL del checkout (curso online o clase presencial). */
 export async function crearPreferencia({ curso, usuario, clase, inscripcion, nombre, correo, base }) {
   const item = curso || clase;
@@ -37,7 +40,7 @@ export async function crearPreferencia({ curso, usuario, clase, inscripcion, nom
     return `${base}/api/simular-pago?ref=${encodeURIComponent(ref)}`;
   }
   const volver = curso
-    ? { ok: `${base}/aula?pago=ok&curso=${encodeURIComponent(curso.id)}`, error: `${base}/curso?id=${encodeURIComponent(curso.id)}&pago=error` }
+    ? { ok: `${base}/aula?pago=ok&curso=${encodeURIComponent(curso.id)}`, error: `${base}/${ficha(curso)}?id=${encodeURIComponent(curso.id)}&pago=error` }
     : { ok: `${base}/inscripcion?id=${encodeURIComponent(inscripcion)}`, error: `${base}/${clase.pagina || 'clase?id=' + encodeURIComponent(clase.id)}${clase.pagina ? '?' : '&'}pago=error` };
   const p = await mp('/checkout/preferences', {
     method: 'POST',
@@ -66,7 +69,7 @@ export async function obtenerPago(id) {
 }
 
 /**
- * Revisa el pago y, si está aprobado, registra la venta: da acceso al curso online
+ * Revisa el pago y, si está aprobado, registra la venta: da acceso al curso online o al patrón
  * o marca pagada la inscripción a la clase presencial.
  * Se puede llamar varias veces con el mismo pago: solo lo registra una vez.
  */
@@ -89,6 +92,7 @@ export async function registrarPago(pago) {
     venta = null;
     if ((await tx.get(ventaRef)).exists) return;
     venta = {
+      ...(cursoDoc.data()?.tipo === 'patron' ? { tipo: 'patron' } : {}),
       fecha: FieldValue.serverTimestamp(),
       uid: ref.uid,
       nombre: usuario?.displayName || '',

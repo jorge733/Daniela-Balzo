@@ -1,5 +1,5 @@
 /* POST /api/crear-pago -> { url }
-   Curso online:      { curso }  (con sesión iniciada; da acceso al aula)
+   Curso online o patrón en PDF:  { curso }  (con sesión iniciada; da acceso al aula)
    Clase presencial:  { clase, nombre, correo, telefono, nota }  (sin cuenta; queda como inscripción)
    El precio siempre sale de Firestore o de los valores originales, nunca del navegador. */
 import { FieldValue } from 'firebase-admin/firestore';
@@ -23,9 +23,10 @@ export async function POST(request) {
   if (!doc.exists || !doc.data().publicado) return error('Este curso no está disponible.', 404);
   const curso = { id, ...doc.data() };
   if (!(curso.precio > 0)) return error('Este curso no tiene precio.');
+  if (curso.tipo === 'patron' && !(curso.materiales || []).length) return error('Este patrón todavía no tiene su PDF. Escríbele a Daniela.', 409);
 
   const acceso = await db.collection('accesos').doc(usuario.uid).get();
-  if (acceso.exists && acceso.data().cursos?.[id]) return error('Ya tienes este curso.', 409);
+  if (acceso.exists && acceso.data().cursos?.[id]) return error(curso.tipo === 'patron' ? 'Ya tienes este patrón.' : 'Ya tienes este curso.', 409);
 
   try {
     const url = await crearPreferencia({ curso, usuario, base: sitio(request) });

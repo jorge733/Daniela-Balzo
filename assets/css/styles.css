@@ -496,3 +496,21 @@ p.pendiente { padding: 10px 14px; }
 
 /* Zona de las páginas de clases que se dibuja desde contenido.js */
 .contenido-clase { display: contents; }
+
+/* Patrones en PDF: tarjetas por categoría y ficha con varias fotos */
+.tarjetas > .vacio { grid-column: 1 / -1; }
+.fotos-categoria { margin-top: 44px; }
+.fotos-categoria h3 { font-size: 1.2rem; margin-bottom: 16px; }
+.patron-fotos .principal { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radio); box-shadow: var(--sombra); background: var(--lila-suave); }
+.miniaturas { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 10px; margin-top: 12px; }
+.miniaturas button { padding: 0; border: 2px solid transparent; border-radius: var(--radio); overflow: hidden; background: none; cursor: pointer; aspect-ratio: 1; transition: border-color .2s; }
+.miniaturas button:hover { border-color: var(--rosa-fuerte); }
+.miniaturas button[aria-current="true"] { border-color: var(--morado-2); }
+.miniaturas img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ficha-patron h1 { margin-top: 0; }
+.ficha-subtitulo { font-size: 1.15rem; margin: 28px 0 8px; }
+.detalles-patron { margin: 0 0 16px; padding-left: 1.1em; }
+.detalles-patron li { margin: 6px 0; }
+.patron-descargas { display: grid; grid-template-columns: minmax(0, 360px) 1fr; gap: clamp(24px, 4vw, 48px); align-items: start; margin-top: 28px; }
+.patron-descargas .principal { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radio); box-shadow: var(--sombra); }
+@media (max-width: 760px) { .patron-descargas { grid-template-columns: 1fr; } }

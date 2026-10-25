@@ -13,8 +13,8 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BASE = (process.argv.slice(2).find(a => !a.startsWith('--')) || 'https://www.negramora.cl').replace(/\/$/, '');
 const IMAGEN = 'assets/img/compartir.jpg';
 const NO_COMPARTIR = ['404.html', 'panel.html'];
-// curso.html cambia según ?id=, así que no lleva una sola dirección canónica
-const SIN_CANONICA = ['curso.html'];
+// curso.html y patron.html cambian según ?id=, así que no llevan una sola dirección canónica
+const SIN_CANONICA = ['curso.html', 'patron.html'];
 
 // ---------- 1. Imagen ----------
 const CHROME = [

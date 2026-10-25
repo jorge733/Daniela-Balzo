@@ -1,4 +1,4 @@
-/* Aula virtual: inicio de sesión, "Mis carpetas" y reproductor de clases. */
+/* Aula virtual: inicio de sesión, "Mis carpetas", reproductor de clases y descarga de los patrones comprados. */
 import * as nube from './nube.js';
 
 const { esc } = NM;
@@ -22,14 +22,14 @@ function login() {
   <section class="banda banda-lila">
     <div class="wrap" style="max-width: 460px">
       <h1>Mis cursos</h1>
-      <p>Entra con el correo y la contraseña que usaste al comprar tu curso.</p>
+      <p>Entra con el correo y la contraseña que usaste al comprar tu curso o patrón.</p>
       <form class="form" id="f-login">
         <label>Correo<input id="l-correo" type="email" autocomplete="email" required></label>
         <label>Contraseña<input id="l-clave" type="password" autocomplete="current-password" required></label>
         <p class="error" id="l-error" role="alert"></p>
         <button class="btn" type="submit">Entrar</button>
         <p class="nota"><button class="enlace" type="button" id="l-olvide">¿Olvidaste tu contraseña?</button></p>
-        <p class="nota">¿Aún no tienes cursos? <a href="cursos-online">Mira los cursos online</a>.</p>
+        <p class="nota">¿Aún no tienes cursos? Mira los <a href="cursos-online">cursos online</a> y los <a href="patrones">patrones</a>.</p>
       </form>
     </div>
   </section>`;
@@ -73,6 +73,17 @@ const carpeta = (prog) => (c) => {
     </div>
   </a>`;
 };
+
+// Tarjeta de un patrón comprado: lleva a su página de descarga
+const tarjetaPatron = (p) => `<a class="tarjeta carpeta-tarjeta" href="aula?curso=${encodeURIComponent(p.id)}">
+    <div class="img"><img src="${esc(NM.fotosPatron(p)[0])}" alt="" loading="lazy">
+      <span class="chip chip-carpeta">${ICO.pdf} Patrón PDF</span></div>
+    <div class="cuerpo">
+      <h3>${esc(p.titulo)}</h3>
+      <p class="contenido-carpeta">${ICO.pdf} ${p.materiales.length === 1 ? '1 PDF' : p.materiales.length + ' PDF'} para descargar</p>
+      <div class="pie-tarjeta"><span class="nota">${esc(NM.categoria(p).id === 'otros' ? 'Patrón' : NM.categoria(p).nombre)}</span><span class="flecha">Descargar </span></div>
+    </div>
+  </a>`;
 
 // Sin tildes ni mayúsculas, para buscar "confeccion" y encontrar "Confección"
 const normal = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -123,7 +134,9 @@ function activarBiblioteca(cursos) {
   buscar?.addEventListener('input', pintar);
 }
 
-function misCarpetas(u, cursos, prog, aviso = '') {
+function misCarpetas(u, todos, prog, aviso = '') {
+  const cursos = todos.filter(c => !NM.esPatron(c));
+  const patrones = todos.filter(NM.esPatron);
   main.innerHTML = `
   <section class="banda">
     <div class="wrap">
@@ -132,9 +145,13 @@ function misCarpetas(u, cursos, prog, aviso = '') {
         <button class="btn btn-borde btn-chico" id="salir" type="button">Cerrar sesión</button>
       </div>
       ${aviso}
-      <h2 class="hilo">Mis carpetas</h2>
+      ${cursos.length || !patrones.length ? `<h2 class="hilo">Mis carpetas</h2>
       <p class="nota">Cada curso que compras tiene su carpeta exclusiva con los videos y materiales. Solo tú puedes abrirla.</p>
-      ${cursos.length ? `<div class="biblioteca">${biblioteca(cursos, prog)}</div>` : `<p class="vacio">Todavía no tienes cursos. <a href="cursos-online">Ver cursos online</a></p>`}
+      ${cursos.length ? `<div class="biblioteca">${biblioteca(cursos, prog)}</div>`
+        : `<p class="vacio">Todavía no tienes cursos ni patrones. Mira los <a href="cursos-online">cursos online</a> y los <a href="patrones">patrones</a>.</p>`}` : ''}
+      ${patrones.length ? `<h2 class="hilo" ${cursos.length ? 'style="margin-top: 56px"' : ''}>Mis patrones</h2>
+      <p class="nota">Los patrones que compraste. Descárgalos e imprímelos cuando quieras, las veces que necesites.</p>
+      <div class="tarjetas" style="margin-top: 24px">${patrones.map(tarjetaPatron).join('')}</div>` : ''}
     </div>
   </section>`;
   if (cursos.length) activarBiblioteca(cursos);
@@ -212,17 +229,7 @@ function verCurso(u, c, prog, i) {
     verCurso(u, c, prog, Number(b.dataset.i));
     window.scrollTo({ top: 0, behavior: 'instant' });
   });
-  main.querySelectorAll('[data-material]').forEach(b => b.onclick = async () => {
-    // La pestaña se abre antes de pedir el enlace para que el navegador no la bloquee.
-    const pestaña = window.open('', '_blank');
-    try {
-      const { url } = await nube.enlaceArchivo(c.id, c.materiales[Number(b.dataset.material)].ruta);
-      if (pestaña) pestaña.location = url; else location.href = url;
-    } catch (e) {
-      if (pestaña) pestaña.close();
-      error.textContent = 'No pudimos abrir el archivo. Intenta otra vez.';
-    }
-  });
+  main.querySelectorAll('[data-material]').forEach(b => b.onclick = () => descargar(c, c.materiales[Number(b.dataset.material)]));
   document.getElementById('hecha').onchange = async (e) => {
     const k = hechas.indexOf(i);
     if (e.target.checked && k < 0) hechas.push(i);
@@ -236,6 +243,46 @@ function verCurso(u, c, prog, i) {
   };
 }
 
+// Un patrón comprado: su foto y sus PDF para descargar
+function verPatron(u, p, aviso = '') {
+  main.innerHTML = `
+  <section class="banda">
+    <div class="wrap">
+      <nav class="ruta" aria-label="Ubicación"><a href="aula">Mis carpetas</a><span aria-hidden="true">/</span><span>${esc(p.titulo)}</span></nav>
+      ${aviso}
+      <span class="etiqueta exclusiva">${ICO.candado} Patrón comprado · solo para ti</span>
+      <h1 style="margin: 0">${esc(p.titulo)}</h1>
+      <div class="patron-descargas">
+        <img class="principal" src="${esc(NM.fotosPatron(p)[0])}" alt="">
+        <div>
+          <div class="carpeta">
+            <div class="carpeta-titulo">${ICO.carpeta} Para descargar <span>${p.materiales.length}</span></div>
+            ${p.materiales.length ? `<ul class="archivos">${p.materiales.map((m, k) => `<li><button type="button" data-material="${k}">${ICO.pdf}<span>${esc(m.nombre)}</span><span class="descargar">Descargar</span></button></li>`).join('')}</ul>`
+              : '<p class="nota">Daniela todavía no sube el PDF. Vuelve pronto.</p>'}
+          </div>
+          <p class="error" id="aula-error" role="alert"></p>
+          <p class="nota" style="margin-top: 16px">Imprímelo en tamaño real (100 %, sin "ajustar a la página") para que las piezas queden a la medida.</p>
+          <p class="nota">¿Dudas con el patrón? <a href="https://wa.me/${NM.CONTACTO.whatsapp}" target="_blank" rel="noopener">Escríbele a Daniela por WhatsApp</a>.</p>
+        </div>
+      </div>
+    </div>
+  </section>`;
+  main.querySelectorAll('[data-material]').forEach(b => b.onclick = () => descargar(p, p.materiales[Number(b.dataset.material)]));
+}
+
+// Abre un material o PDF con un enlace temporal que entrega el servidor.
+async function descargar(c, m) {
+  // La pestaña se abre antes de pedir el enlace para que el navegador no la bloquee.
+  const pestaña = window.open('', '_blank');
+  try {
+    const { url } = await nube.enlaceArchivo(c.id, m.ruta);
+    if (pestaña) pestaña.location = url; else location.href = url;
+  } catch (e) {
+    if (pestaña) pestaña.close();
+    document.getElementById('aula-error').textContent = 'No pudimos abrir el archivo. Intenta otra vez.';
+  }
+}
+
 // Al volver de Mercado Pago: confirma el pago por si el aviso automático aún no llega.
 async function confirmarRegreso() {
   const pago = params.get('payment_id') || params.get('collection_id');
@@ -244,11 +291,11 @@ async function confirmarRegreso() {
   history.replaceState(null, '', 'aula');
   try {
     const r = await nube.confirmarPago(pago);
-    if (r.estado === 'approved') return '<p class="exito">¡Pago aprobado! Ya tienes acceso a tu curso. Mercado Pago te enviará el comprobante a tu correo.</p>';
-    if (r.estado === 'pending' || r.estado === 'in_process') return '<p class="aviso-suave">Tu pago está en revisión. Apenas Mercado Pago lo apruebe, el curso aparecerá aquí.</p>';
+    if (r.estado === 'approved') return '<p class="exito">¡Pago aprobado! Ya es tuyo. Mercado Pago te enviará el comprobante a tu correo.</p>';
+    if (r.estado === 'pending' || r.estado === 'in_process') return '<p class="aviso-suave">Tu pago está en revisión. Apenas Mercado Pago lo apruebe, tu compra aparecerá aquí.</p>';
     return '<p class="error">El pago no se aprobó. No se cobró nada; puedes intentarlo otra vez desde el curso.</p>';
   } catch (e) {
-    return '<p class="aviso-suave">Estamos confirmando tu pago con Mercado Pago. Si no ves tu curso en unos minutos, recarga esta página.</p>';
+    return '<p class="aviso-suave">Estamos confirmando tu pago con Mercado Pago. Si no ves tu compra en unos minutos, recarga esta página.</p>';
   }
 }
 
@@ -260,6 +307,10 @@ async function render() {
   const [ids, prog] = await Promise.all([nube.misCursos(u), nube.progreso(u)]);
   const cursos = (await Promise.all(ids.map(nube.curso))).filter(Boolean);
   const c = cursos.find(x => x.id === params.get('curso'));
+  if (c && NM.esPatron(c)) {
+    history.replaceState(null, '', 'aula?curso=' + encodeURIComponent(c.id));
+    return verPatron(u, c, aviso);
+  }
   if (c && c.lecciones.length && !aviso) {
     const clase = Math.min(Math.max(Number(params.get('clase')) || 1, 1), c.lecciones.length) - 1;
     return verCurso(u, c, prog, clase);

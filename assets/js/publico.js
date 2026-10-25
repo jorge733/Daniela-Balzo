@@ -1,4 +1,4 @@
-/* Lectura de datos públicos (cursos publicados) con la API REST de Firestore.
+/* Lectura de datos públicos (cursos y patrones publicados) con la API REST de Firestore.
    Evita cargar el SDK de Firebase en las páginas que solo muestran el catálogo. */
 import { FIREBASE, EMULADORES } from './config.js';
 
@@ -18,7 +18,11 @@ function valor(v) {
 }
 const campos = (f) => Object.fromEntries(Object.entries(f).map(([k, v]) => [k, valor(v)]));
 
-export async function cursosPublicados() {
+// Cursos y patrones viven en la misma colección; los patrones llevan tipo "patron".
+export const cursosPublicados = async () => (await publicados()).filter(c => !NM.esPatron(c));
+export const patronesPublicados = async () => (await publicados()).filter(NM.esPatron);
+
+async function publicados() {
   const r = await fetch(BASE + ':runQuery', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

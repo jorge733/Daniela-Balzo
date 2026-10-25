@@ -1,4 +1,4 @@
-/* Correos de cada venta (curso online o clase presencial), enviados con Resend (https://resend.com):
+/* Correos de cada venta (curso online, patrón en PDF o clase presencial), enviados con Resend (https://resend.com):
    - aviso a Daniela con los datos de quien pagó (AVISO_CORREO),
    - confirmación a quien compró o se inscribió (necesita el dominio verificado en Resend).
    RESEND_API_KEY y AVISO_CORREO en Vercel. Sin RESEND_API_KEY los correos solo se escriben en el registro (así se ven en local).
@@ -67,7 +67,9 @@ function aviso(venta) {
       ['Pagó', monto(venta.monto)]
     ])}
 ${nota || ''}
-${parrafo(presencial ? 'Escríbele para coordinar el horario.' : 'Ya tiene acceso al curso en Mis cursos, no tienes que hacer nada más.')}
+${parrafo(presencial ? 'Escríbele para coordinar el horario.' : venta.tipo === 'patron'
+    ? 'Ya puede descargar el patrón desde Mis cursos, no tienes que hacer nada más.'
+    : 'Ya tiene acceso al curso en Mis cursos, no tienes que hacer nada más.')}
 ${wa ? boton(wa, 'Escribirle por WhatsApp', C.ok) : ''}
 ${base ? parrafo(enlace(`${base}/panel#ventas`, 'Ver mis ventas en el panel'), 'margin-top: 8px') : ''}`
   });
@@ -77,6 +79,7 @@ ${base ? parrafo(enlace(`${base}/panel#ventas`, 'Ver mis ventas en el panel'), '
 function confirmacion(venta) {
   const base = sitio();
   const presencial = venta.tipo === 'presencial';
+  const patron = venta.tipo === 'patron';
   const nombre = escapar(String(venta.nombre || '').trim().split(/\s+/)[0]);
   const titulo = escapar(venta.titulo);
   const asunto = `${presencial ? 'Inscripción confirmada' : 'Compra confirmada'}: ${venta.titulo}`;
@@ -84,15 +87,18 @@ function confirmacion(venta) {
     ? `${parrafo('<b>¿Qué sigue?</b>', 'margin-bottom: 6px')}
 ${parrafo(`Daniela te escribirá ${venta.telefono ? 'por WhatsApp' : 'por correo'} en los próximos días para coordinar el horario de la clase.`)}
 ${base ? parrafo(`Si prefieres escribirle tú, encuentras sus datos en ${enlace(`${base}/contacto`, 'Contacto')}.`) : ''}`
-    : `${parrafo('Puedes verlo cuando quieras y a tu ritmo, entrando con tu cuenta.')}
+    : patron
+      ? `${parrafo('El PDF queda guardado en Mis cursos: entra con tu cuenta para descargarlo e imprimirlo cuando quieras, las veces que necesites.')}
+${base ? boton(`${base}/aula?curso=${encodeURIComponent(venta.curso)}`, 'Descargar mi patrón') : ''}`
+      : `${parrafo('Puedes verlo cuando quieras y a tu ritmo, entrando con tu cuenta.')}
 ${base ? boton(`${base}/aula`, 'Ir a Mis cursos') : ''}`;
   const html = marco({
-    previa: presencial ? `Tu lugar en ${venta.titulo} está reservado.` : `Ya puedes empezar ${venta.titulo}.`,
+    previa: presencial ? `Tu lugar en ${venta.titulo} está reservado.` : patron ? `Ya puedes descargar ${venta.titulo}.` : `Ya puedes empezar ${venta.titulo}.`,
     etiqueta: presencial ? 'Inscripción confirmada' : 'Compra confirmada',
-    titulo: `¡Hola${nombre ? ' ' + nombre : ''}! ${presencial ? 'Tu lugar está reservado' : 'Tu curso ya está listo'}`,
+    titulo: `¡Hola${nombre ? ' ' + nombre : ''}! ${presencial ? 'Tu lugar está reservado' : patron ? 'Tu patrón ya está listo' : 'Tu curso ya está listo'}`,
     cuerpo: `${parrafo(`Recibimos tu pago de <b>${titulo}</b>.`)}
 ${datos([
-      [presencial ? 'Clase' : 'Curso', titulo],
+      [presencial ? 'Clase' : patron ? 'Patrón' : 'Curso', titulo],
       ['Pagado', monto(venta.monto)]
     ])}
 ${siguiente}

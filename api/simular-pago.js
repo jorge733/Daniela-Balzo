@@ -1,7 +1,7 @@
 /* GET /api/simular-pago?ref=...  (solo en local, sin credenciales de Mercado Pago)
    Reemplaza el checkout para probar la compra completa con los emuladores. */
 import { db } from './_lib/firebase.js';
-import { SIMULADO, registrarPago } from './_lib/mercadopago.js';
+import { SIMULADO, registrarPago, ficha } from './_lib/mercadopago.js';
 import { sitio } from './_lib/util.js';
 
 const pagina = (ref) => `<!doctype html><html lang="es"><meta charset="utf-8">
@@ -28,7 +28,8 @@ export async function GET(request) {
   if (ref.startsWith('insc|') && !insc) return new Response('Inscripción no encontrada', { status: 404 });
   if (resultado !== 'approved') {
     if (insc) return Response.redirect(`${base}/${insc.volver}${insc.volver.includes('?') ? '&' : '?'}pago=error`, 302);
-    return Response.redirect(`${base}/curso?id=${encodeURIComponent(curso)}&pago=error`, 302);
+    const doc = await db.collection('cursos').doc(curso).get();
+    return Response.redirect(`${base}/${ficha(doc.data() || {})}?id=${encodeURIComponent(curso)}&pago=error`, 302);
   }
   const id = String(Date.now());
   const pago = { id, status: 'approved', external_reference: ref, currency_id: 'CLP', transaction_amount: Number(precio), payment_method_id: 'simulado' };
